@@ -1,0 +1,139 @@
+{% load socialaccount %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login | AI Resume</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Poppins', sans-serif;
+            background: #e6f0ff; /* soft blue */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background: #fff;
+            padding: 30px 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+
+        h2 { text-align: center; color: #1a1a1a; margin-bottom: 25px; }
+
+        form { display: flex; flex-direction: column; }
+
+        input[type="text"], input[type="password"] {
+            padding: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 16px;
+            background: #f9f9f9;
+            width: 94%;
+        }
+
+        button[type="submit"] {
+            padding: 12px;
+            background-color: #1a73e8;
+            color: #fff;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: 0.3s;
+        }
+
+        button[type="submit"]:hover { background-color: #131517; }
+
+        .password-container { position: relative; }
+
+        .eye-icon {
+            position: absolute;
+            top: 15%;
+            right: 12px;
+            cursor: pointer;
+            font-size: 18px;
+        }
+
+        p { text-align: center; font-size: 14px; }
+        a { color: #1a73e8; text-decoration: none; font-weight: bold; }
+        a:hover { text-decoration: underline; }
+
+        .google-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    padding: 10px 20px !important;
+    background: #fff !important;       /* force white */
+    /* force black border */
+    border-radius: 6px !important;
+    font-size: 16px !important;
+    color: #000 !important;            /* force black text */
+    cursor: pointer !important;
+    text-decoration: none !important;
+    font-weight: 500 !important;
+}
+
+.google-btn:hover {
+    background: #f2f2f2 !important;
+    border-color: #000 !important;
+}
+
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Login</h2>
+        <form method="POST" action="{% url 'account_login' %}">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            <input type="text" name="login" placeholder="Email" required>
+            <div class="password-container">
+                <input type="password" name="password" id="password" placeholder="Password" required>
+                <span id="togglePassword" class="eye-icon" onclick="togglePasswordVisibility()">👀</span>
+            </div>
+            <button type="submit">Login</button>
+        </form>
+
+        <p>Don't have an account? <a href="{% url 'account_signup' %}">Sign Up</a></p>
+
+        <p>Or</p>
+        {% load socialaccount %}
+        <div style="display: flex; justify-content: center; margin-top: 20px;">
+            <form method="POST" action="{% provider_login_url 'google' process='login' %}">
+                {% csrf_token %}
+                <button type="submit" class="google-btn">
+                    <img src="https://developers.google.com/identity/images/g-logo.png" 
+                         alt="Google logo" style="width:18px; height:18px; margin-right:8px;">
+                    Sign in with Google
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('togglePassword');
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.textContent = '🙄';
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.textContent = '👀';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1573 @@
+{% extends "account/base.html" %}
+
+{% block extra_head %}
+<style>
+    /* Professional Upload Area */
+    .upload-icon {
+        font-size: 32px;
+        color: var(--primary-color);
+        margin-bottom: 12px;
+    }
+
+    .upload-text {
+        font-size: 14px;
+        font-weight: 500;
+        color: var(--gray-700);
+        margin-bottom: 6px;
+    }
+
+    .upload-subtext {
+        font-size: 12px;
+        color: var(--gray-500);
+        margin-bottom: 12px;
+    }
+
+    .file-info {
+        font-size: 14px;
+        color: var(--success-color);
+        margin-top: 12px;
+    }
+
+    /* Professional Section Headers */
+    .section-header {
+        color: var(--gray-800);
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        padding-bottom: 8px;
+        border-bottom: 2px solid var(--gray-200);
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    /* Professional Form Layout */
+    .form-section {
+        margin-bottom: 32px;
+    }
+
+    .form-section:last-child {
+        margin-bottom: 0;
+    }
+
+    /* Professional Button Groups */
+    .btn-group {
+        display: flex;
+        gap: 12px;
+        justify-content: center;
+        margin-top: 24px;
+    }
+
+    /* Professional Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .loading-content {
+        text-align: center;
+        background-color: var(--white);
+        padding: 32px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .loading-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 16px;
+    }
+
+    .loading-steps {
+        margin-top: 24px;
+    }
+
+    .loading-step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 14px;
+        color: var(--gray-600);
+    }
+
+    .loading-step.active {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .loading-step.completed {
+        color: var(--success-color);
+    }
+
+    .step-number {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .loading-step.active .step-number {
+        background-color: var(--primary-color);
+        color: var(--white);
+    }
+
+    .loading-step.completed .step-number {
+        background-color: var(--success-color);
+        color: var(--white);
+    }
+
+    /* Professional Auto-fill Animation */
+    .field-highlight {
+        background-color: #eff6ff !important;
+        border-color: var(--primary-color) !important;
+        transition: all 0.3s ease;
+    }
+
+    /* Professional Responsive Design */
+    @media (max-width: 768px) {
+        .btn-group {
+            flex-direction: column;
+        }
+        
+        .btn-group .btn {
+            width: 100%;
+        }
+        
+        .upload-area {
+            padding: 24px 16px;
+        }
+        
+        .upload-icon {
+            font-size: 36px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <!-- Resume Upload Section -->
+            <div class="card">
+                <div class="card-header">
+                    <h4><i class="fas fa-file-upload"></i> 
+                        {% if parsed_resume or user_profile.parsed_resume_data %}
+                            Update Your Resume
+                        {% else %}
+                            Upload Your Resume
+                        {% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    {% if parsed_resume or user_profile.parsed_resume_data %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Resume Already Uploaded!</strong> You can upload a new resume to update your profile data.
+                        </div>
+                    {% endif %}
+                    
+                    <form method="post" enctype="multipart/form-data" id="resumeForm">
+                        {% csrf_token %}
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <div class="upload-text">Click to upload your resume</div>
+                            <div class="upload-subtext">Supported formats: PDF, DOC, DOCX (Max 10MB)</div>
+                        </div>
+                        <div style="display: none;">
+                            {{ resume_form.resume }}
+                        </div>
+                        <div class="file-info" id="fileInfo" style="display: none;"></div>
+                        <button type="submit" class="btn btn-primary mt-3" id="uploadBtn">
+                            <i class="fas fa-upload"></i> 
+                            {% if parsed_resume or user_profile.parsed_resume_data %}
+                                Update Resume
+                            {% else %}
+                                Upload & Parse Resume
+                            {% endif %}
+                        </button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Profile Review Section -->
+            {% if parsed_resume or user_profile.parsed_resume_data %}
+                <!-- Hidden data element for auto-fill -->
+                {% if parsed_resume %}
+                    {{ parsed_resume|json_script:"resumeData" }}
+                {% elif user_profile.parsed_resume_data %}
+                    {{ user_profile.parsed_resume_data|json_script:"resumeData" }}
+                {% endif %}
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h4><i class="fas fa-user-edit"></i> Review & Edit Your Profile</h4>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" action="{% url 'update_profile' %}" id="profileForm">
+                            {% csrf_token %}
+                            
+                            <!-- Personal Information -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-user"></i> Personal Information
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">First Name</label>
+                                            <input type="text" name="first_name" class="form-control" 
+                                                   value="{{ user_profile.first_name|default_if_none:'' }}" 
+                                                   placeholder="Enter your first name">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">Last Name</label>
+                                            <input type="text" name="last_name" class="form-control" 
+                                                   value="{{ user_profile.last_name|default_if_none:'' }}" 
+                                                   placeholder="Enter your last name">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">Email</label>
+                                            <input type="email" name="email" class="form-control" 
+                                                   value="{{ user_profile.email|default_if_none:'' }}" 
+                                                   placeholder="Enter your email">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">Phone</label>
+                                            <input type="tel" name="phone" class="form-control" 
+                                                   value="{{ user_profile.phone|default_if_none:'' }}" 
+                                                   placeholder="Enter your phone number">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Education -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-graduation-cap"></i> Education
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-auto" onclick="addEducationEntry()">
+                                        <i class="fas fa-plus"></i> Add Education
+                                    </button>
+                                </div>
+                                <div id="educationContainer" data-education-count="{% if user_profile.education %}{{ user_profile.education|length }}{% else %}1{% endif %}">
+                                    {% if user_profile.education %}
+                                        {% for edu in user_profile.education %}
+                                            <div class="education-entry mb-3 p-3 border rounded">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Institute</label>
+                                                            <input type="text" name="education_institute_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{{ edu.institute|default_if_none:'' }}" 
+                                                                   placeholder="Enter institute name">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Degree</label>
+                                                            <input type="text" name="education_degree_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{{ edu.degree|default_if_none:'' }}" 
+                                                                   placeholder="Enter degree">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="row">
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label class="form-label">CGPA</label>
+                                                            <input type="text" name="education_cgpa_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{{ edu.cgpa|default_if_none:'' }}" 
+                                                                   placeholder="Enter CGPA">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Start Year</label>
+                                                            <input type="text" name="education_start_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{{ edu.start_year|default_if_none:'' }}" 
+                                                                   placeholder="e.g., 2020">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <div class="form-group">
+                                                            <label class="form-label">End Year</label>
+                                                            <input type="text" name="education_end_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{{ edu.end_year|default_if_none:'' }}" 
+                                                                   placeholder="e.g., 2024">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeEducationEntry(this)">
+                                                    <i class="fas fa-trash"></i> Remove
+                                                </button>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="education-entry mb-3 p-3 border rounded">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Institute</label>
+                                                        <input type="text" name="education_institute_0" class="form-control" 
+                                                               placeholder="Enter institute name">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Degree</label>
+                                                        <input type="text" name="education_degree_0" class="form-control" 
+                                                               placeholder="Enter degree">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="row">
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="form-label">CGPA</label>
+                                                        <input type="text" name="education_cgpa_0" class="form-control" 
+                                                               placeholder="Enter CGPA">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Start Year</label>
+                                                        <input type="text" name="education_start_0" class="form-control" 
+                                                               placeholder="e.g., 2020">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-4">
+                                                    <div class="form-group">
+                                                        <label class="form-label">End Year</label>
+                                                        <input type="text" name="education_end_0" class="form-control" 
+                                                               placeholder="e.g., 2024">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeEducationEntry(this)">
+                                                <i class="fas fa-trash"></i> Remove
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Experience -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-briefcase"></i> Work Experience
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">Work Experience (Years)</label>
+                                            <input type="number" name="work_experience_years" class="form-control" 
+                                                   value="{{ user_profile.work_experience_years|default_if_none:0 }}" 
+                                                   min="0" max="50">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">Work Experience (Months)</label>
+                                            <input type="number" name="work_experience_months" class="form-control" 
+                                                   value="{{ user_profile.work_experience_months|default_if_none:0 }}" 
+                                                   min="0" max="11">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">Research Experience (Years)</label>
+                                            <input type="number" name="research_experience_years" class="form-control" 
+                                                   value="{{ user_profile.research_experience_years|default_if_none:0 }}" 
+                                                   min="0" max="50">
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label">Research Experience (Months)</label>
+                                            <input type="number" name="research_experience_months" class="form-control" 
+                                                   value="{{ user_profile.research_experience_months|default_if_none:0 }}" 
+                                                   min="0" max="11">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Skills -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-tools"></i> Skills
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-auto" onclick="addSkillEntry()">
+                                        <i class="fas fa-plus"></i> Add Skill
+                                    </button>
+                                </div>
+                                <div id="skillsContainer" data-skills-count="{% if user_profile.skills %}{{ user_profile.skills|length }}{% else %}1{% endif %}">
+                                    {% if user_profile.skills %}
+                                        {% for skill in user_profile.skills %}
+                                            <div class="skill-entry mb-2 d-flex align-items-center">
+                                                <input type="text" name="skill_{{ forloop.counter0 }}" class="form-control me-2" 
+                                                       value="{{ skill }}" placeholder="Enter skill">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSkillEntry(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="skill-entry mb-2 d-flex align-items-center">
+                                            <input type="text" name="skill_0" class="form-control me-2" 
+                                                   placeholder="Enter skill">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSkillEntry(this)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Projects -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-project-diagram"></i> Projects
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-auto" onclick="addProjectEntry()">
+                                        <i class="fas fa-plus"></i> Add Project
+                                    </button>
+                                </div>
+                                <div id="projectsContainer" data-projects-count="{% if user_profile.projects %}{{ user_profile.projects|length }}{% else %}1{% endif %}">
+                                    {% if user_profile.projects %}
+                                        {% for project in user_profile.projects %}
+                                            <div class="project-entry mb-3 p-3 border rounded">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Project Name</label>
+                                                            <input type="text" name="project_name_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{% if project.name %}{{ project.name }}{% else %}{{ project }}{% endif %}" 
+                                                                   placeholder="Enter project name">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Description</label>
+                                                            <input type="text" name="project_desc_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{% if project.description %}{{ project.description }}{% endif %}" 
+                                                                   placeholder="Enter project description">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeProjectEntry(this)">
+                                                    <i class="fas fa-trash"></i> Remove
+                                                </button>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="project-entry mb-3 p-3 border rounded">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Project Name</label>
+                                                        <input type="text" name="project_name_0" class="form-control" 
+                                                               placeholder="Enter project name">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Description</label>
+                                                        <input type="text" name="project_desc_0" class="form-control" 
+                                                               placeholder="Enter project description">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeProjectEntry(this)">
+                                                <i class="fas fa-trash"></i> Remove
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Certifications -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-certificate"></i> Certifications
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-auto" onclick="addCertificationEntry()">
+                                        <i class="fas fa-plus"></i> Add Certification
+                                    </button>
+                                </div>
+                                <div id="certificationsContainer" data-certifications-count="{% if user_profile.certifications %}{{ user_profile.certifications|length }}{% else %}1{% endif %}">
+                                    {% if user_profile.certifications %}
+                                        {% for cert in user_profile.certifications %}
+                                            <div class="certification-entry mb-3 p-3 border rounded">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Certification Name</label>
+                                                            <input type="text" name="cert_name_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{% if cert.name %}{{ cert.name }}{% else %}{{ cert }}{% endif %}" 
+                                                                   placeholder="Enter certification name">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Issuer</label>
+                                                            <input type="text" name="cert_issuer_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{% if cert.issuer %}{{ cert.issuer }}{% endif %}" 
+                                                                   placeholder="Enter issuer">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCertificationEntry(this)">
+                                                    <i class="fas fa-trash"></i> Remove
+                                                </button>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="certification-entry mb-3 p-3 border rounded">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Certification Name</label>
+                                                        <input type="text" name="cert_name_0" class="form-control" 
+                                                               placeholder="Enter certification name">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Issuer</label>
+                                                        <input type="text" name="cert_issuer_0" class="form-control" 
+                                                               placeholder="Enter issuer">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCertificationEntry(this)">
+                                                <i class="fas fa-trash"></i> Remove
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Publications -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-book"></i> Publications
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-auto" onclick="addPublicationEntry()">
+                                        <i class="fas fa-plus"></i> Add Publication
+                                    </button>
+                                </div>
+                                <div id="publicationsContainer" data-publications-count="{% if user_profile.publications %}{{ user_profile.publications|length }}{% else %}1{% endif %}">
+                                    {% if user_profile.publications %}
+                                        {% for pub in user_profile.publications %}
+                                            <div class="publication-entry mb-3 p-3 border rounded">
+                                                <div class="row">
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Publication Name</label>
+                                                            <input type="text" name="pub_name_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{% if pub.name %}{{ pub.name }}{% else %}{{ pub }}{% endif %}" 
+                                                                   placeholder="Enter publication name">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <div class="form-group">
+                                                            <label class="form-label">Publisher</label>
+                                                            <input type="text" name="pub_publisher_{{ forloop.counter0 }}" class="form-control" 
+                                                                   value="{% if pub.publisher %}{{ pub.publisher }}{% endif %}" 
+                                                                   placeholder="Enter publisher">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePublicationEntry(this)">
+                                                    <i class="fas fa-trash"></i> Remove
+                                                </button>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="publication-entry mb-3 p-3 border rounded">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Publication Name</label>
+                                                        <input type="text" name="pub_name_0" class="form-control" 
+                                                               placeholder="Enter publication name">
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label">Publisher</label>
+                                                        <input type="text" name="pub_publisher_0" class="form-control" 
+                                                               placeholder="Enter publisher">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePublicationEntry(this)">
+                                                <i class="fas fa-trash"></i> Remove
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Hackathons -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-trophy"></i> Hackathons
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-auto" onclick="addHackathonEntry()">
+                                        <i class="fas fa-plus"></i> Add Hackathon
+                                    </button>
+                                </div>
+                                <div id="hackathonsContainer" data-hackathons-count="{% if user_profile.hackathons %}{{ user_profile.hackathons|length }}{% else %}1{% endif %}">
+                                    {% if user_profile.hackathons %}
+                                        {% for hackathon in user_profile.hackathons %}
+                                            <div class="hackathon-entry mb-2 d-flex align-items-center">
+                                                <input type="text" name="hackathon_{{ forloop.counter0 }}" class="form-control me-2" 
+                                                       value="{{ hackathon }}" placeholder="Enter hackathon name">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeHackathonEntry(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="hackathon-entry mb-2 d-flex align-items-center">
+                                            <input type="text" name="hackathon_0" class="form-control me-2" 
+                                                   placeholder="Enter hackathon name">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeHackathonEntry(this)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Interests -->
+                            <div class="form-section">
+                                <div class="section-header">
+                                    <i class="fas fa-heart"></i> Interests
+                                    <button type="button" class="btn btn-sm btn-outline-primary ms-auto" onclick="addInterestEntry()">
+                                        <i class="fas fa-plus"></i> Add Interest
+                                    </button>
+                                </div>
+                                <div id="interestsContainer" data-interests-count="{% if user_profile.interests %}{{ user_profile.interests|length }}{% else %}1{% endif %}">
+                                    {% if user_profile.interests %}
+                                        {% for interest in user_profile.interests %}
+                                            <div class="interest-entry mb-2 d-flex align-items-center">
+                                                <input type="text" name="interest_{{ forloop.counter0 }}" class="form-control me-2" 
+                                                       value="{{ interest }}" placeholder="Enter interest">
+                                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeInterestEntry(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </div>
+                                        {% endfor %}
+                                    {% else %}
+                                        <div class="interest-entry mb-2 d-flex align-items-center">
+                                            <input type="text" name="interest_0" class="form-control me-2" 
+                                                   placeholder="Enter interest">
+                                            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeInterestEntry(this)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="btn-group">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-save"></i> Save Profile
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+
+            <!-- Continue Button -->
+            {% if parsed_resume or user_profile.parsed_resume_data %}
+                <div class="text-center mt-4">
+                    <a href="{% url 'dashboard' %}" class="btn btn-success btn-lg">
+                        <i class="fas fa-arrow-right"></i> Continue to Job Matching
+                    </a>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Loading Overlay -->
+<div class="loading-overlay" id="loadingOverlay" style="display: none;">
+    <div class="loading-content">
+        <div class="loading-spinner"></div>
+        <div class="loading-title">Processing Your Resume</div>
+        <div class="loading-steps">
+            <div class="loading-step" id="step1">
+                <div class="step-number">1</div>
+                <div>Uploading file...</div>
+            </div>
+            <div class="loading-step" id="step2">
+                <div class="step-number">2</div>
+                <div>Extracting text with LlamaParse...</div>
+            </div>
+            <div class="loading-step" id="step3">
+                <div class="step-number">3</div>
+                <div>Analyzing with Gemini AI...</div>
+            </div>
+            <div class="loading-step" id="step4">
+                <div class="step-number">4</div>
+                <div>Updating your profile...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Debug logging function
+    function debugLog(message, data = null) {
+        console.log(`[DEBUG] ${new Date().toISOString()} - ${message}`);
+        if (data) {
+            console.log(`[DEBUG] Data:`, data);
+        }
+    }
+
+    // Test function to debug file input
+    function testFileInput() {
+        debugLog("=== TESTING FILE INPUT ===");
+        
+        // List all inputs on the page
+        const allInputs = document.querySelectorAll('input');
+        debugLog("All inputs found:", allInputs.length);
+        allInputs.forEach((input, index) => {
+            debugLog(`Input ${index}:`, {
+                id: input.id,
+                name: input.name,
+                type: input.type,
+                className: input.className
+            });
+        });
+        
+        // Try to find file inputs specifically
+        const fileInputs = document.querySelectorAll('input[type="file"]');
+        debugLog("File inputs found:", fileInputs.length);
+        fileInputs.forEach((input, index) => {
+            debugLog(`File input ${index}:`, {
+                id: input.id,
+                name: input.name,
+                className: input.className
+            });
+        });
+        
+        // Try to trigger file dialog
+        debugLog("Attempting to trigger file dialog...");
+        openFileDialog();
+    }
+
+    // File dialog function - simplified
+    function openFileDialog() {
+        debugLog("File dialog opened");
+        
+        const fileInput = document.getElementById('id_resume');
+        if (fileInput) {
+            debugLog(`File input found with ID: ${fileInput.id}`);
+            fileInput.click();
+        } else {
+            debugLog("ERROR: File input with ID 'id_resume' not found!");
+            alert('File input not found. Please refresh the page and try again.');
+        }
+    }
+
+    // File upload handling - simplified and reliable
+    function setupFileInputListener() {
+        debugLog("Setting up file input listener");
+        
+        const fileInput = document.getElementById('id_resume');
+        if (fileInput) {
+            debugLog(`File input found with ID: ${fileInput.id}`);
+            
+            // Remove existing listeners to avoid duplicates
+            fileInput.removeEventListener('change', handleFileChange);
+            fileInput.addEventListener('change', handleFileChange);
+            
+            return true;
+        } else {
+            debugLog("ERROR: File input with ID 'id_resume' not found!");
+            return false;
+        }
+    }
+
+    function handleFileChange(e) {
+        debugLog("File input changed");
+        const file = e.target.files[0];
+        if (file) {
+            debugLog(`File selected: ${file.name}, size: ${file.size} bytes`);
+            document.getElementById('fileInfo').style.display = 'block';
+            document.getElementById('fileInfo').innerHTML = 
+                `<i class="fas fa-file"></i> Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+        } else {
+            debugLog("No file selected");
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        debugLog("DOM loaded, setting up file input listener");
+        
+        // Setup immediately - no delay needed
+        if (!setupFileInputListener()) {
+            debugLog("ERROR: Failed to setup file input listener!");
+        }
+    });
+
+    // Form submission with loading
+    document.getElementById('resumeForm').addEventListener('submit', function(e) {
+        debugLog("Form submission started");
+        
+        const fileInput = document.getElementById('id_resume');
+        
+        if (!fileInput || !fileInput.files[0]) {
+            debugLog("ERROR: No file selected, preventing submission");
+            e.preventDefault();
+            alert('Please select a resume file first.');
+            return;
+        }
+        debugLog(`File selected for upload: ${fileInput.files[0].name}`);
+
+        // Show loading overlay
+        document.getElementById('loadingOverlay').style.display = 'flex';
+        
+        // Simulate progress steps
+        setTimeout(() => {
+            document.getElementById('step1').classList.add('active');
+        }, 500);
+        
+        setTimeout(() => {
+            document.getElementById('step1').classList.add('completed');
+            document.getElementById('step2').classList.add('active');
+        }, 2000);
+        
+        setTimeout(() => {
+            document.getElementById('step2').classList.add('completed');
+            document.getElementById('step3').classList.add('active');
+        }, 5000);
+        
+        setTimeout(() => {
+            document.getElementById('step3').classList.add('completed');
+            document.getElementById('step4').classList.add('active');
+        }, 8000);
+        
+        // After processing, the page will reload with new data
+    });
+
+    // BULLETPROOF Upload area functionality - handles both click and drag-drop
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadArea = document.getElementById('uploadArea');
+        if (!uploadArea) {
+            debugLog("CRITICAL ERROR: uploadArea element not found!");
+            return;
+        }
+        
+        debugLog("Setting up upload area listeners");
+        
+        // Handle click to open file dialog
+        uploadArea.addEventListener('click', function(e) {
+            debugLog("Upload area clicked");
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const fileInput = document.getElementById('id_resume');
+            if (!fileInput) {
+                debugLog("CRITICAL ERROR: id_resume element not found!");
+                alert('Error: File input not found. Please refresh the page.');
+                return;
+            }
+            
+            debugLog("File input found, opening dialog");
+            // Force the file input to be visible temporarily for the click
+            const originalDisplay = fileInput.style.display;
+            fileInput.style.display = 'block';
+            fileInput.style.position = 'absolute';
+            fileInput.style.left = '-9999px';
+            
+            // Trigger the click
+            fileInput.click();
+            
+            // Restore original display
+            fileInput.style.display = originalDisplay;
+            fileInput.style.position = '';
+            fileInput.style.left = '';
+        });
+        
+        // Handle drag and drop
+        uploadArea.addEventListener('dragover', function(e) {
+            debugLog("Drag over event");
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            debugLog("Drag leave event");
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            debugLog("Drop event");
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            debugLog(`Files dropped: ${files.length}`);
+            if (files.length > 0) {
+                const file = files[0];
+                debugLog(`File dropped: ${file.name}, size: ${file.size}`);
+                
+                const fileInput = document.getElementById('id_resume');
+                
+                if (fileInput) {
+                    debugLog(`File input found with ID: ${fileInput.id}, setting files`);
+                    fileInput.files = files;
+                    document.getElementById('fileInfo').style.display = 'block';
+                    document.getElementById('fileInfo').innerHTML = 
+                        `<i class="fas fa-file"></i> Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                } else {
+                    debugLog("ERROR: File input with ID 'id_resume' not found for drag and drop!");
+                }
+            }
+        });
+    });
+
+    // Education management functions
+    let educationCounter = 1;
+
+    function addEducationEntry() {
+        debugLog("Adding new education entry");
+        const container = document.getElementById('educationContainer');
+        
+        // Initialize counter from data attribute if not already set
+        if (educationCounter === 1) {
+            const dataCount = container.getAttribute('data-education-count');
+            if (dataCount) {
+                educationCounter = parseInt(dataCount);
+            }
+        }
+        const newEntry = document.createElement('div');
+        newEntry.className = 'education-entry mb-3 p-3 border rounded';
+        newEntry.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Institute</label>
+                        <input type="text" name="education_institute_${educationCounter}" class="form-control" 
+                               placeholder="Enter institute name">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Degree</label>
+                        <input type="text" name="education_degree_${educationCounter}" class="form-control" 
+                               placeholder="Enter degree">
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">CGPA</label>
+                        <input type="text" name="education_cgpa_${educationCounter}" class="form-control" 
+                               placeholder="Enter CGPA">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">Start Year</label>
+                        <input type="text" name="education_start_${educationCounter}" class="form-control" 
+                               placeholder="e.g., 2020">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-group">
+                        <label class="form-label">End Year</label>
+                        <input type="text" name="education_end_${educationCounter}" class="form-control" 
+                               placeholder="e.g., 2024">
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeEducationEntry(this)">
+                <i class="fas fa-trash"></i> Remove
+            </button>
+        `;
+        container.appendChild(newEntry);
+        educationCounter++;
+        
+        // Highlight the new entry
+        newEntry.style.backgroundColor = '#eff6ff';
+        newEntry.style.borderColor = 'var(--primary-color)';
+        setTimeout(() => {
+            newEntry.style.backgroundColor = '';
+            newEntry.style.borderColor = '';
+        }, 2000);
+    }
+
+    function removeEducationEntry(button) {
+        debugLog("Removing education entry");
+        const entry = button.closest('.education-entry');
+        if (entry) {
+            entry.remove();
+        }
+    }
+
+    // Skills management functions
+    let skillsCounter = 1;
+
+    function addSkillEntry() {
+        debugLog("Adding new skill entry");
+        const container = document.getElementById('skillsContainer');
+        
+        if (skillsCounter === 1) {
+            const dataCount = container.getAttribute('data-skills-count');
+            if (dataCount) {
+                skillsCounter = parseInt(dataCount);
+            }
+        }
+        
+        const newEntry = document.createElement('div');
+        newEntry.className = 'skill-entry mb-2 d-flex align-items-center';
+        newEntry.innerHTML = `
+            <input type="text" name="skill_${skillsCounter}" class="form-control me-2" 
+                   placeholder="Enter skill">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeSkillEntry(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        container.appendChild(newEntry);
+        skillsCounter++;
+        
+        newEntry.style.backgroundColor = '#eff6ff';
+        newEntry.style.borderColor = 'var(--primary-color)';
+        setTimeout(() => {
+            newEntry.style.backgroundColor = '';
+            newEntry.style.borderColor = '';
+        }, 2000);
+    }
+
+    function removeSkillEntry(button) {
+        debugLog("Removing skill entry");
+        const entry = button.closest('.skill-entry');
+        if (entry) {
+            entry.remove();
+        }
+    }
+
+    // Projects management functions
+    let projectsCounter = 1;
+
+    function addProjectEntry() {
+        debugLog("Adding new project entry");
+        const container = document.getElementById('projectsContainer');
+        
+        if (projectsCounter === 1) {
+            const dataCount = container.getAttribute('data-projects-count');
+            if (dataCount) {
+                projectsCounter = parseInt(dataCount);
+            }
+        }
+        
+        const newEntry = document.createElement('div');
+        newEntry.className = 'project-entry mb-3 p-3 border rounded';
+        newEntry.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Project Name</label>
+                        <input type="text" name="project_name_${projectsCounter}" class="form-control" 
+                               placeholder="Enter project name">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Description</label>
+                        <input type="text" name="project_desc_${projectsCounter}" class="form-control" 
+                               placeholder="Enter project description">
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeProjectEntry(this)">
+                <i class="fas fa-trash"></i> Remove
+            </button>
+        `;
+        container.appendChild(newEntry);
+        projectsCounter++;
+        
+        newEntry.style.backgroundColor = '#eff6ff';
+        newEntry.style.borderColor = 'var(--primary-color)';
+        setTimeout(() => {
+            newEntry.style.backgroundColor = '';
+            newEntry.style.borderColor = '';
+        }, 2000);
+    }
+
+    function removeProjectEntry(button) {
+        debugLog("Removing project entry");
+        const entry = button.closest('.project-entry');
+        if (entry) {
+            entry.remove();
+        }
+    }
+
+    // Certifications management functions
+    let certificationsCounter = 1;
+
+    function addCertificationEntry() {
+        debugLog("Adding new certification entry");
+        const container = document.getElementById('certificationsContainer');
+        
+        if (certificationsCounter === 1) {
+            const dataCount = container.getAttribute('data-certifications-count');
+            if (dataCount) {
+                certificationsCounter = parseInt(dataCount);
+            }
+        }
+        
+        const newEntry = document.createElement('div');
+        newEntry.className = 'certification-entry mb-3 p-3 border rounded';
+        newEntry.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Certification Name</label>
+                        <input type="text" name="cert_name_${certificationsCounter}" class="form-control" 
+                               placeholder="Enter certification name">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Issuer</label>
+                        <input type="text" name="cert_issuer_${certificationsCounter}" class="form-control" 
+                               placeholder="Enter issuer">
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeCertificationEntry(this)">
+                <i class="fas fa-trash"></i> Remove
+            </button>
+        `;
+        container.appendChild(newEntry);
+        certificationsCounter++;
+        
+        newEntry.style.backgroundColor = '#eff6ff';
+        newEntry.style.borderColor = 'var(--primary-color)';
+        setTimeout(() => {
+            newEntry.style.backgroundColor = '';
+            newEntry.style.borderColor = '';
+        }, 2000);
+    }
+
+    function removeCertificationEntry(button) {
+        debugLog("Removing certification entry");
+        const entry = button.closest('.certification-entry');
+        if (entry) {
+            entry.remove();
+        }
+    }
+
+    // Publications management functions
+    let publicationsCounter = 1;
+
+    function addPublicationEntry() {
+        debugLog("Adding new publication entry");
+        const container = document.getElementById('publicationsContainer');
+        
+        if (publicationsCounter === 1) {
+            const dataCount = container.getAttribute('data-publications-count');
+            if (dataCount) {
+                publicationsCounter = parseInt(dataCount);
+            }
+        }
+        
+        const newEntry = document.createElement('div');
+        newEntry.className = 'publication-entry mb-3 p-3 border rounded';
+        newEntry.innerHTML = `
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Publication Name</label>
+                        <input type="text" name="pub_name_${publicationsCounter}" class="form-control" 
+                               placeholder="Enter publication name">
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-group">
+                        <label class="form-label">Publisher</label>
+                        <input type="text" name="pub_publisher_${publicationsCounter}" class="form-control" 
+                               placeholder="Enter publisher">
+                    </div>
+                </div>
+            </div>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePublicationEntry(this)">
+                <i class="fas fa-trash"></i> Remove
+            </button>
+        `;
+        container.appendChild(newEntry);
+        publicationsCounter++;
+        
+        newEntry.style.backgroundColor = '#eff6ff';
+        newEntry.style.borderColor = 'var(--primary-color)';
+        setTimeout(() => {
+            newEntry.style.backgroundColor = '';
+            newEntry.style.borderColor = '';
+        }, 2000);
+    }
+
+    function removePublicationEntry(button) {
+        debugLog("Removing publication entry");
+        const entry = button.closest('.publication-entry');
+        if (entry) {
+            entry.remove();
+        }
+    }
+
+    // Hackathons management functions
+    let hackathonsCounter = 1;
+
+    function addHackathonEntry() {
+        debugLog("Adding new hackathon entry");
+        const container = document.getElementById('hackathonsContainer');
+        
+        if (hackathonsCounter === 1) {
+            const dataCount = container.getAttribute('data-hackathons-count');
+            if (dataCount) {
+                hackathonsCounter = parseInt(dataCount);
+            }
+        }
+        
+        const newEntry = document.createElement('div');
+        newEntry.className = 'hackathon-entry mb-2 d-flex align-items-center';
+        newEntry.innerHTML = `
+            <input type="text" name="hackathon_${hackathonsCounter}" class="form-control me-2" 
+                   placeholder="Enter hackathon name">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeHackathonEntry(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        container.appendChild(newEntry);
+        hackathonsCounter++;
+        
+        newEntry.style.backgroundColor = '#eff6ff';
+        newEntry.style.borderColor = 'var(--primary-color)';
+        setTimeout(() => {
+            newEntry.style.backgroundColor = '';
+            newEntry.style.borderColor = '';
+        }, 2000);
+    }
+
+    function removeHackathonEntry(button) {
+        debugLog("Removing hackathon entry");
+        const entry = button.closest('.hackathon-entry');
+        if (entry) {
+            entry.remove();
+        }
+    }
+
+    // Interests management functions
+    let interestsCounter = 1;
+
+    function addInterestEntry() {
+        debugLog("Adding new interest entry");
+        const container = document.getElementById('interestsContainer');
+        
+        if (interestsCounter === 1) {
+            const dataCount = container.getAttribute('data-interests-count');
+            if (dataCount) {
+                interestsCounter = parseInt(dataCount);
+            }
+        }
+        
+        const newEntry = document.createElement('div');
+        newEntry.className = 'interest-entry mb-2 d-flex align-items-center';
+        newEntry.innerHTML = `
+            <input type="text" name="interest_${interestsCounter}" class="form-control me-2" 
+                   placeholder="Enter interest">
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeInterestEntry(this)">
+                <i class="fas fa-trash"></i>
+            </button>
+        `;
+        container.appendChild(newEntry);
+        interestsCounter++;
+        
+        newEntry.style.backgroundColor = '#eff6ff';
+        newEntry.style.borderColor = 'var(--primary-color)';
+        setTimeout(() => {
+            newEntry.style.backgroundColor = '';
+            newEntry.style.borderColor = '';
+        }, 2000);
+    }
+
+    function removeInterestEntry(button) {
+        debugLog("Removing interest entry");
+        const entry = button.closest('.interest-entry');
+        if (entry) {
+            entry.remove();
+        }
+    }
+
+    // Auto-fill functionality from LLM JSON data
+    function autoFillFromResumeData(resumeData) {
+        debugLog("Auto-filling form with resume data:", resumeData);
+        
+        // Fill personal information
+        if (resumeData.first_name) {
+            document.querySelector('input[name="first_name"]').value = resumeData.first_name;
+            highlightField(document.querySelector('input[name="first_name"]'));
+        }
+        if (resumeData.last_name) {
+            document.querySelector('input[name="last_name"]').value = resumeData.last_name;
+            highlightField(document.querySelector('input[name="last_name"]'));
+        }
+        if (resumeData.email) {
+            document.querySelector('input[name="email"]').value = resumeData.email;
+            highlightField(document.querySelector('input[name="email"]'));
+        }
+        if (resumeData.phone) {
+            document.querySelector('input[name="phone"]').value = resumeData.phone;
+            highlightField(document.querySelector('input[name="phone"]'));
+        }
+
+        // Fill education
+        if (resumeData.education && resumeData.education.length > 0) {
+            resumeData.education.forEach((edu, index) => {
+                const instituteInput = document.querySelector(`input[name="education_institute_${index}"]`);
+                const degreeInput = document.querySelector(`input[name="education_degree_${index}"]`);
+                const cgpaInput = document.querySelector(`input[name="education_cgpa_${index}"]`);
+                const startInput = document.querySelector(`input[name="education_start_${index}"]`);
+                const endInput = document.querySelector(`input[name="education_end_${index}"]`);
+                
+                if (instituteInput) instituteInput.value = edu.institute || '';
+                if (degreeInput) degreeInput.value = edu.degree || '';
+                if (cgpaInput) cgpaInput.value = edu.cgpa || '';
+                if (startInput) startInput.value = edu.start_year || '';
+                if (endInput) endInput.value = edu.end_year || '';
+                
+                // Add more entries if needed
+                if (index === 0 && resumeData.education.length > 1) {
+                    for (let i = 1; i < resumeData.education.length; i++) {
+                        addEducationEntry();
+                        const eduData = resumeData.education[i];
+                        const lastEntry = document.getElementById('educationContainer').lastElementChild;
+                        lastEntry.querySelector('input[name*="institute"]').value = eduData.institute || '';
+                        lastEntry.querySelector('input[name*="degree"]').value = eduData.degree || '';
+                        lastEntry.querySelector('input[name*="cgpa"]').value = eduData.cgpa || '';
+                        lastEntry.querySelector('input[name*="start"]').value = eduData.start_year || '';
+                        lastEntry.querySelector('input[name*="end"]').value = eduData.end_year || '';
+                    }
+                }
+            });
+        }
+
+        // Fill skills
+        if (resumeData.skills && resumeData.skills.length > 0) {
+            resumeData.skills.forEach((skill, index) => {
+                const skillInput = document.querySelector(`input[name="skill_${index}"]`);
+                if (skillInput) {
+                    skillInput.value = skill;
+                } else if (index === 0) {
+                    // If first skill input doesn't exist, try to find it
+                    const firstSkillInput = document.querySelector('input[name*="skill"]');
+                    if (firstSkillInput) firstSkillInput.value = skill;
+                }
+                
+                // Add more entries if needed
+                if (index === 0 && resumeData.skills.length > 1) {
+                    for (let i = 1; i < resumeData.skills.length; i++) {
+                        addSkillEntry();
+                        const lastEntry = document.getElementById('skillsContainer').lastElementChild;
+                        lastEntry.querySelector('input[name*="skill"]').value = resumeData.skills[i];
+                    }
+                }
+            });
+        }
+
+        // Fill projects
+        if (resumeData.projects && resumeData.projects.length > 0) {
+            resumeData.projects.forEach((project, index) => {
+                const nameInput = document.querySelector(`input[name="project_name_${index}"]`);
+                const descInput = document.querySelector(`input[name="project_desc_${index}"]`);
+                
+                if (nameInput) nameInput.value = project.name || project;
+                if (descInput) descInput.value = project.description || '';
+                
+                // Add more entries if needed
+                if (index === 0 && resumeData.projects.length > 1) {
+                    for (let i = 1; i < resumeData.projects.length; i++) {
+                        addProjectEntry();
+                        const projData = resumeData.projects[i];
+                        const lastEntry = document.getElementById('projectsContainer').lastElementChild;
+                        lastEntry.querySelector('input[name*="name"]').value = projData.name || projData;
+                        lastEntry.querySelector('input[name*="desc"]').value = projData.description || '';
+                    }
+                }
+            });
+        }
+
+        // Fill certifications
+        if (resumeData.certifications && resumeData.certifications.length > 0) {
+            const certsContainer = document.getElementById('certificationsContainer');
+            certsContainer.innerHTML = '';
+            
+            resumeData.certifications.forEach((cert, index) => {
+                if (index === 0) {
+                    document.querySelector('input[name="cert_name_0"]').value = cert.name || cert;
+                    document.querySelector('input[name="cert_issuer_0"]').value = cert.issuer || '';
+                } else {
+                    addCertificationEntry();
+                    const lastEntry = certsContainer.lastElementChild;
+                    lastEntry.querySelector('input[name*="name"]').value = cert.name || cert;
+                    lastEntry.querySelector('input[name*="issuer"]').value = cert.issuer || '';
+                }
+            });
+        }
+
+        // Fill publications
+        if (resumeData.publications && resumeData.publications.length > 0) {
+            const pubsContainer = document.getElementById('publicationsContainer');
+            pubsContainer.innerHTML = '';
+            
+            resumeData.publications.forEach((pub, index) => {
+                if (index === 0) {
+                    document.querySelector('input[name="pub_name_0"]').value = pub.name || pub;
+                    document.querySelector('input[name="pub_publisher_0"]').value = pub.publisher || '';
+                } else {
+                    addPublicationEntry();
+                    const lastEntry = pubsContainer.lastElementChild;
+                    lastEntry.querySelector('input[name*="name"]').value = pub.name || pub;
+                    lastEntry.querySelector('input[name*="publisher"]').value = pub.publisher || '';
+                }
+            });
+        }
+
+        // Fill hackathons
+        if (resumeData.hackathons && resumeData.hackathons.length > 0) {
+            const hackathonsContainer = document.getElementById('hackathonsContainer');
+            hackathonsContainer.innerHTML = '';
+            
+            resumeData.hackathons.forEach((hackathon, index) => {
+                if (index === 0) {
+                    document.querySelector('input[name="hackathon_0"]').value = hackathon;
+                } else {
+                    addHackathonEntry();
+                    const lastEntry = hackathonsContainer.lastElementChild;
+                    lastEntry.querySelector('input[name*="hackathon"]').value = hackathon;
+                }
+            });
+        }
+
+        // Fill interests
+        if (resumeData.interests && resumeData.interests.length > 0) {
+            const interestsContainer = document.getElementById('interestsContainer');
+            interestsContainer.innerHTML = '';
+            
+            resumeData.interests.forEach((interest, index) => {
+                if (index === 0) {
+                    document.querySelector('input[name="interest_0"]').value = interest;
+                } else {
+                    addInterestEntry();
+                    const lastEntry = interestsContainer.lastElementChild;
+                    lastEntry.querySelector('input[name*="interest"]').value = interest;
+                }
+            });
+        }
+
+        // Show success message
+        showAutoFillSuccess();
+    }
+
+    function highlightField(field) {
+        field.classList.add('field-highlight');
+        setTimeout(() => {
+            field.classList.remove('field-highlight');
+        }, 2000);
+    }
+
+    function showAutoFillSuccess() {
+        // Create a temporary success message
+        const successDiv = document.createElement('div');
+        successDiv.className = 'alert alert-success alert-dismissible fade show';
+        successDiv.innerHTML = `
+            <i class="fas fa-check-circle"></i>
+            <strong>Auto-fill Complete!</strong> Your resume data has been automatically populated. Review and edit as needed.
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        
+        // Insert at the top of the form
+        const form = document.getElementById('profileForm');
+        form.insertBefore(successDiv, form.firstChild);
+        
+        // Auto-dismiss after 5 seconds
+        setTimeout(() => {
+            if (successDiv.parentNode) {
+                successDiv.remove();
+            }
+        }, 5000);
+    }
+
+    // Auto-fill when page loads if resume data is available
+    document.addEventListener('DOMContentLoaded', function() {
+        debugLog("=== PAGE LOAD DEBUG ===");
+        debugLog("Checking for resume data element...");
+        
+        const resumeDataElement = document.getElementById('resumeData');
+        debugLog("Resume data element found:", resumeDataElement !== null);
+        
+        if (resumeDataElement) {
+            debugLog("Element content length:", resumeDataElement.textContent.length);
+            debugLog("Element content preview:", resumeDataElement.textContent.substring(0, 100));
+        }
+        
+        if (resumeDataElement && resumeDataElement.textContent) {
+            debugLog("Auto-filling with parsed resume data");
+            try {
+                const resumeDataText = resumeDataElement.textContent.trim();
+                debugLog("Resume data text:", resumeDataText);
+                
+                if (resumeDataText && resumeDataText !== 'null' && resumeDataText !== '') {
+                    const resumeData = JSON.parse(resumeDataText);
+                    debugLog("Successfully parsed resume data:", resumeData);
+                    autoFillFromResumeData(resumeData);
+                } else {
+                    debugLog("Resume data is empty or null, skipping auto-fill");
+                }
+            } catch (error) {
+                debugLog("Error parsing resume data:", error);
+                console.error("Failed to parse resume data:", error);
+            }
+        } else {
+            debugLog("No resume data element found or empty content");
+        }
+        
+        debugLog("=== END PAGE LOAD DEBUG ===");
+    });
+</script>
+
+{% endblock %}

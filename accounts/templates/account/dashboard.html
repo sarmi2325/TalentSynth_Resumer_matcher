@@ -1,0 +1,1219 @@
+{% extends "account/base.html" %}
+
+{% block extra_head %}
+<style>
+    /* Professional Dashboard Styles */
+    .dashboard-header {
+        background-color: var(--white);
+        border-bottom: 1px solid var(--gray-200);
+        padding: 24px 0;
+        margin-bottom: 32px;
+    }
+
+    .dashboard-title {
+        font-size: 24px;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 8px;
+    }
+
+    .dashboard-subtitle {
+        font-size: 16px;
+        color: var(--gray-600);
+    }
+    /* Professional Loading Overlay */
+    .loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .loading-content {
+        text-align: center;
+        background-color: var(--white);
+        padding: 32px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .loading-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 16px;
+    }
+
+    .loading-steps {
+        margin-top: 24px;
+    }
+
+    .loading-step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 14px;
+        color: var(--gray-600);
+    }
+
+    .loading-step.active {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .loading-step.completed {
+        color: var(--success-color);
+    }
+
+    .step-number {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .loading-step.active .step-number {
+        background-color: var(--primary-color);
+        color: var(--white);
+    }
+
+    .loading-step.completed .step-number {
+        background-color: var(--success-color);
+        color: var(--white);
+    }
+
+    /* Professional Auto-fill Animation */
+    .field-highlight {
+        background-color: #eff6ff !important;
+        border-color: var(--primary-color) !important;
+        transition: all 0.3s ease;
+    }
+    /* Professional Job Upload */
+    .job-upload-card {
+        background-color: var(--white);
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 32px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    .upload-tabs {
+        display: flex;
+        border-bottom: 1px solid var(--gray-200);
+        margin-bottom: 24px;
+    }
+
+    .upload-tab {
+        padding: 12px 24px;
+        cursor: pointer;
+        border-bottom: 2px solid transparent;
+        font-weight: 500;
+        color: var(--gray-600);
+        transition: all 0.2s ease;
+    }
+
+    .upload-tab.active {
+        color: var(--primary-color);
+        border-bottom-color: var(--primary-color);
+    }
+
+    .upload-tab:hover {
+        color: var(--primary-color);
+    }
+
+    .tab-content {
+        display: none;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    /* Professional Analysis Results */
+    .analysis-results {
+        background-color: var(--white);
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        padding: 24px;
+        margin-bottom: 32px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    .analysis-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .analysis-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-800);
+    }
+
+    .match-score {
+        background-color: var(--success-color);
+        color: var(--white);
+        padding: 8px 16px;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .analysis-content {
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--gray-700);
+        background-color: var(--gray-50);
+        padding: 20px;
+        border-radius: 6px;
+        white-space: pre-wrap;
+        overflow-x: auto;
+    }
+
+    /* Professional History Table */
+    .history-card {
+        background-color: var(--white);
+        border: 1px solid var(--gray-200);
+        border-radius: 8px;
+        padding: 24px;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    }
+
+    .history-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+    }
+
+    .history-table th,
+    .history-table td {
+        padding: 12px 16px;
+        text-align: left;
+        border-bottom: 1px solid var(--gray-200);
+    }
+
+    .history-table th {
+        background-color: var(--gray-50);
+        font-weight: 600;
+        color: var(--gray-700);
+        font-size: 14px;
+    }
+
+    .history-table td {
+        font-size: 14px;
+        color: var(--gray-600);
+    }
+
+    .history-table tr:hover {
+        background-color: var(--gray-50);
+    }
+
+    .score-badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .score-high {
+        background-color: #ecfdf5;
+        color: #065f46;
+    }
+
+    .score-medium {
+        background-color: #fffbeb;
+        color: #92400e;
+    }
+
+    .score-low {
+        background-color: #fef2f2;
+        color: #991b1b;
+    }
+
+    /* Professional Responsive Design */
+    @media (max-width: 768px) {
+        .dashboard-header {
+            padding: 16px 0;
+        }
+        
+        .dashboard-title {
+            font-size: 20px;
+        }
+        
+        .upload-tabs {
+            flex-direction: column;
+        }
+        
+        .upload-tab {
+            border-bottom: 1px solid var(--gray-200);
+            border-right: none;
+        }
+        
+        .upload-tab.active {
+            border-bottom-color: var(--primary-color);
+        }
+        
+        .analysis-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        
+        .history-table {
+            font-size: 12px;
+        }
+        
+        .history-table th,
+        .history-table td {
+            padding: 8px 12px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+
+
+<div class="container">
+    {% if not user_profile.parsed_resume_data %}
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+            <strong>No Resume Found!</strong> Please upload your resume first to start job matching.
+            <a href="{% url 'profile' %}" class="btn btn-primary btn-sm ms-2">
+                <i class="fas fa-upload"></i> Upload Resume
+            </a>
+        </div>
+    {% else %}
+        <!-- Job Description Upload -->
+        <div class="job-upload-card">
+            <h4><i class="fas fa-file-upload"></i> Upload Job Description</h4>
+            
+            <div class="upload-tabs">
+                <div class="upload-tab active" onclick="switchTab('file')">
+                    <i class="fas fa-file"></i> Upload File
+                </div>
+                <div class="upload-tab" onclick="switchTab('text')">
+                    <i class="fas fa-keyboard"></i> Paste Text
+                </div>
+            </div>
+
+            <form method="post" enctype="multipart/form-data" id="jobForm">
+                {% csrf_token %}
+                
+                <div class="tab-content active" id="fileTab">
+                    <div class="form-group">
+                        <label class="form-label">Upload Job Description File</label>
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                            <div class="upload-text">Click to upload job description</div>
+                            <div class="upload-subtext">Supported formats: PDF, DOC, DOCX, TXT (Max 10MB)</div>
+                        </div>
+                        <div style="display: none;">
+                            {{ job_form.job_desc }}
+                        </div>
+                        <div class="file-info" id="fileInfo" style="display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="textTab">
+                    <div class="form-group">
+                        <label class="form-label">Paste Job Description</label>
+                        {{ job_form.job_text }}
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" id="analyzeBtn">
+                    <i class="fas fa-search"></i> Analyze Job Match
+                </button>
+            </form>
+        </div>
+
+        <!-- Analysis History -->
+        <div class="history-card">
+            <h4><i class="fas fa-history"></i> Analysis History</h4>
+            <p class="text-muted">View your previous job analysis results</p>
+            
+            {% if user_profile.analyses.all %}
+                <table class="history-table">
+                    <thead>
+                        <tr>
+                            <th>Job Title</th>
+                            <th>Company</th>
+                            <th>Date</th>
+                            <th>Match Score</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for analysis in analysis_history %}
+                            <tr>
+                                <td>{{ analysis.job_title|default_if_none:"N/A" }}</td>
+                                <td>{{ analysis.job_company|default_if_none:"N/A" }}</td>
+                                <td>{{ analysis.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <span class="score-badge {% if analysis.get_overall_fit_percentage >= 80 %}score-high{% elif analysis.get_overall_fit_percentage >= 60 %}score-medium{% else %}score-low{% endif %}">
+                                        {{ analysis.get_overall_fit_percentage }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="action-icons">
+                                        <button class="btn btn-link p-1 me-2" onclick="viewAnalysisModal('{{ analysis.id }}')" title="View Report">
+                                            <i class="fas fa-eye text-primary" style="font-size: 16px;"></i>
+                                        </button>
+                                        <button class="btn btn-link p-1 me-2" onclick="downloadAnalysisPDF('{{ analysis.id }}')" title="Download PDF">
+                                            <i class="fas fa-download text-success" style="font-size: 16px;"></i>
+                                        </button>
+                                        <button class="btn btn-link p-1" onclick="confirmDeleteAnalysis('{{ analysis.id }}', '{% if analysis.job_title %}{{ analysis.job_title|escapejs }}{% else %}this analysis{% endif %}')" title="Delete">
+                                            <i class="fas fa-trash text-danger" style="font-size: 16px;"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-inbox" style="font-size: 48px; color: var(--gray-400); margin-bottom: 16px;"></i>
+                    <p class="text-muted">No analysis history yet. Upload your first job description to get started!</p>
+                </div>
+            {% endif %}
+        </div>
+    {% endif %}
+</div>
+
+<script>
+    // Debug logging function
+    function debugLog(message, data = null) {
+        console.log(`[DEBUG] ${new Date().toISOString()} - ${message}`);
+        if (data) {
+            console.log(`[DEBUG] Data:`, data);
+        }
+    }
+
+    // Tab switching
+    function switchTab(tabName) {
+        // Remove active class from all tabs and content
+        document.querySelectorAll('.upload-tab').forEach(tab => tab.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+        
+        // Add active class to selected tab and content
+        event.target.classList.add('active');
+        document.getElementById(tabName + 'Tab').classList.add('active');
+    }
+
+    // File upload handling
+    document.addEventListener('DOMContentLoaded', function() {
+        debugLog("Dashboard DOM loaded, setting up file input listener");
+        
+        const fileInput = document.getElementById('id_job_desc');
+        if (fileInput) {
+            debugLog("Job file input found, adding change listener");
+            fileInput.addEventListener('change', function(e) {
+                debugLog("Job file input changed");
+                const file = e.target.files[0];
+                if (file) {
+                    debugLog(`Job file selected: ${file.name}, size: ${file.size} bytes`);
+                    document.getElementById('fileInfo').style.display = 'block';
+                    document.getElementById('fileInfo').innerHTML = 
+                        `<i class="fas fa-file"></i> Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                    fileInput.dataset.valid = "true";
+                } else {
+                    debugLog("No job file selected");
+                }
+            });
+        } else {
+            debugLog("ERROR: Job file input not found!");
+        }
+    });
+
+    // REMOVED DUPLICATE EVENT LISTENER - consolidated into single handler below
+
+    // View analysis details
+    function viewAnalysis(analysisId) {
+        // This would typically open a modal or navigate to a details page
+        alert('Analysis details for ID: ' + analysisId + '\n\nThis feature will show detailed analysis results in a modal or separate page.');
+    }
+
+    // BULLETPROOF Delete analysis - prevents double clicks
+    function deleteAnalysis(analysisId) {
+        console.log("Delete analysis called for ID:", analysisId);
+        
+        // Prevent double deletion - check if any delete button for this analysis is already disabled
+        const deleteButtons = document.querySelectorAll(`button[onclick*="confirmDeleteAnalysis('${analysisId}'"]`);
+        const anyDisabled = Array.from(deleteButtons).some(btn => btn.disabled);
+        
+        if (anyDisabled) {
+            console.log("Delete already in progress, ignoring click");
+            return;
+        }
+        
+        if (confirm('Are you sure you want to delete this analysis? This action cannot be undone.')) {
+            // IMMEDIATELY disable all delete buttons to prevent double clicks
+            document.querySelectorAll(`button[onclick*="confirmDeleteAnalysis('${analysisId}'"]`).forEach(btn => {
+                btn.disabled = true;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin text-danger" style="font-size: 16px;"></i>';
+            });
+            // Debug CSRF token
+            const csrfToken = document.querySelector('input[name="csrfmiddlewaretoken"]');
+            console.log('CSRF token element:', csrfToken);
+            if (!csrfToken) {
+                console.error('CSRF token not found!');
+                alert('Error: CSRF token not found. Please refresh the page and try again.');
+                return;
+            }
+            console.log('CSRF token value:', csrfToken.value);
+            
+            // Debug the request URL
+            const deleteUrl = `/delete-analysis/${analysisId}/`;
+            console.log('Delete URL:', deleteUrl);
+            console.log('Analysis ID:', analysisId);
+            
+            // Send DELETE request to server
+            console.log('Sending DELETE request...');
+            fetch(`/delete-analysis/${analysisId}/`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRFToken': document.querySelector('input[name="csrfmiddlewaretoken"]').value,
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => {
+                console.log('Delete response received');
+                console.log('Delete response status:', response.status);
+                console.log('Delete response headers:', response.headers);
+                if (response.ok) {
+                    return response.json().then(data => {
+                        console.log('Delete success:', data);
+                        
+                        // Show success message briefly
+                        const alertDiv = document.createElement('div');
+                        alertDiv.className = 'alert alert-success alert-dismissible fade show';
+                        alertDiv.innerHTML = `
+                            <i class="fas fa-check-circle"></i>
+                            <strong>Success!</strong> Analysis deleted successfully. Refreshing page...
+                        `;
+                        document.querySelector('.container').insertBefore(alertDiv, document.querySelector('.container').firstChild);
+                        
+                        // Refresh the page after a short delay to show the success message
+                        setTimeout(() => {
+                            console.log('Refreshing page after successful deletion');
+                            window.location.reload();
+                        }, 1000);
+                    });
+                } else {
+                    console.error('Delete failed with status:', response.status);
+                    console.error('Response text:', response.statusText);
+                    
+                    // Try to get error details
+                    return response.text().then(text => {
+                        console.error('Delete error response text:', text);
+                        try {
+                            const errorData = JSON.parse(text);
+                            console.error('Delete error response JSON:', errorData);
+                            alert(`Error deleting analysis: ${errorData.message || 'Unknown error'}`);
+                        } catch (e) {
+                            console.error('Could not parse error response as JSON');
+                            alert(`Error deleting analysis. Server returned status: ${response.status} - ${text}`);
+                        }
+                    }).catch(textError => {
+                        console.error('Error reading response text:', textError);
+                        alert(`Error deleting analysis. Server returned status: ${response.status}`);
+                    });
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error deleting analysis. Please try again.');
+                // Re-enable buttons on error
+                document.querySelectorAll(`button[onclick*="confirmDeleteAnalysis('${analysisId}'"]`).forEach(btn => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-trash text-danger" style="font-size: 16px;"></i>';
+                });
+            });
+        }
+    }
+
+    // BULLETPROOF Upload area functionality - handles both click and drag-drop
+    document.addEventListener('DOMContentLoaded', function() {
+        const uploadArea = document.getElementById('uploadArea');
+        if (!uploadArea) {
+            console.error('CRITICAL ERROR: uploadArea element not found!');
+            return;
+        }
+        
+        // Handle click to open file dialog
+        uploadArea.addEventListener('click', function(e) {
+            console.log('Upload area clicked');
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const fileInput = document.getElementById('id_job_desc');
+            if (!fileInput) {
+                console.error('CRITICAL ERROR: id_job_desc element not found!');
+                alert('Error: File input not found. Please refresh the page.');
+                return;
+            }
+            
+            console.log('File input found, opening dialog');
+            // Force the file input to be visible temporarily for the click
+            const originalDisplay = fileInput.style.display;
+            fileInput.style.display = 'block';
+            fileInput.style.position = 'absolute';
+            fileInput.style.left = '-9999px';
+            
+            // Trigger the click
+            fileInput.click();
+            
+            // Restore original display
+            fileInput.style.display = originalDisplay;
+            fileInput.style.position = '';
+            fileInput.style.left = '';
+        });
+        
+        // Handle drag and drop
+        uploadArea.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                const fileInput = document.getElementById('id_job_desc');
+                const fileInfo = document.getElementById('fileInfo');
+                
+                if (!fileInput) {
+                    console.error('CRITICAL ERROR: id_job_desc element not found!');
+                    alert('Error: File input not found. Please refresh the page.');
+                    return;
+                }
+                
+                if (!fileInfo) {
+                    console.error('CRITICAL ERROR: fileInfo element not found!');
+                    alert('Error: File info display not found. Please refresh the page.');
+                    return;
+                }
+                
+                console.log('Files dropped:', files.length);
+                fileInput.files = files;
+                const file = files[0];
+                fileInfo.style.display = 'block';
+                fileInfo.innerHTML = 
+                    `<i class="fas fa-file"></i> Selected: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+                fileInput.dataset.valid = "true";
+            }
+        });
+    });
+
+    // BULLETPROOF Job description form submission with loading
+    document.addEventListener('DOMContentLoaded', function() {
+        const jobForm = document.getElementById('jobForm');
+        if (!jobForm) {
+            console.error('CRITICAL ERROR: jobForm element not found!');
+            return;
+        }
+        
+        jobForm.addEventListener('submit', function(e) {
+            console.log("Job description form submission started");
+            
+            // Prevent double submission
+            const submitBtn = document.getElementById('analyzeBtn');
+            if (!submitBtn) {
+                console.error('CRITICAL ERROR: analyzeBtn element not found!');
+                e.preventDefault();
+                alert('Error: Submit button not found. Please refresh the page.');
+                return;
+            }
+            
+            if (submitBtn.disabled) {
+                console.log("Form already submitting, preventing duplicate submission");
+                e.preventDefault();
+                return;
+            }
+        
+        const fileInput = document.getElementById('id_job_desc');
+        const textInput = document.getElementById('id_job_text');
+        
+        console.log(`File input: ${fileInput ? 'found' : 'not found'}`);
+        console.log(`Text input: ${textInput ? 'found' : 'not found'}`);
+        
+        if (fileInput) {
+            console.log(`File selected: ${fileInput.files.length > 0 ? fileInput.files[0].name : 'none'}`);
+        }
+        if (textInput) {
+            console.log(`Text content length: ${textInput.value.trim().length}`);
+        }
+        
+        const hasFile = fileInput && fileInput.files.length > 0;
+        const hasText = textInput && textInput.value.trim().length > 0;
+
+        if (!hasFile && !hasText) {
+            console.log("ERROR: No file or text provided, preventing submission");
+            e.preventDefault();
+            alert('Please upload a file or paste job description text.');
+            return;
+        }
+        
+        // IMMEDIATELY disable button to prevent double clicks
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+        
+        console.log("Form submission proceeding with button disabled");
+        
+        // Show loading overlay (same style as resume upload)
+        const loadingOverlay = document.createElement('div');
+        loadingOverlay.className = 'loading-overlay';
+        loadingOverlay.innerHTML = `
+            <div class="loading-content">
+                <div class="loading-spinner"></div>
+                <div class="loading-title">Analyzing Job Description</div>
+                <div class="loading-steps">
+                    <div class="loading-step active" id="job-step1">
+                        <div class="step-number">1</div>
+                        <div>Processing job description...</div>
+                    </div>
+                    <div class="loading-step" id="job-step2">
+                        <div class="step-number">2</div>
+                        <div>Extracting job details...</div>
+                    </div>
+                    <div class="loading-step" id="job-step3">
+                        <div class="step-number">3</div>
+                        <div>Comparing with your resume...</div>
+                    </div>
+                    <div class="loading-step" id="job-step4">
+                        <div class="step-number">4</div>
+                        <div>Generating analysis report...</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(loadingOverlay);
+        
+        // Simulate progress steps (more realistic timing)
+        setTimeout(() => {
+            document.getElementById('job-step1').classList.add('completed');
+            document.getElementById('job-step2').classList.add('active');
+        }, 1500);
+        
+        setTimeout(() => {
+            document.getElementById('job-step2').classList.add('completed');
+            document.getElementById('job-step3').classList.add('active');
+        }, 4000);
+        
+        setTimeout(() => {
+            document.getElementById('job-step3').classList.add('completed');
+            document.getElementById('job-step4').classList.add('active');
+        }, 7000);
+        
+        // After processing, the page will reload with results
+        });
+    }); // End of DOMContentLoaded
+
+    // Analysis Modal Functions
+    function viewAnalysisModal(analysisId) {
+        console.log("Opening analysis modal for ID:", analysisId);
+        
+        // Show loading state
+        const modal = document.getElementById('analysisModal');
+        const modalBody = document.getElementById('analysisModalBody');
+        modalBody.innerHTML = `
+            <div class="text-center py-4">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-2">Loading analysis report...</p>
+            </div>
+        `;
+        
+        // Show modal
+        const bootstrapModal = new bootstrap.Modal(modal);
+        bootstrapModal.show();
+        
+        // Fetch analysis details
+        fetch(`/analysis-details/${analysisId}/`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Analysis data received:", data);
+                renderAnalysisReport(data);
+            })
+            .catch(error => {
+                console.error('Error fetching analysis:', error);
+                modalBody.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Error loading analysis report. Please try again.
+                    </div>
+                `;
+            });
+    }
+
+    function renderAnalysisReport(data) {
+        const modalBody = document.getElementById('analysisModalBody');
+        
+        // Calculate category scores
+        const categoryScores = {
+            technical: 0,
+            soft: 0,
+            experience: 0,
+            education: 0
+        };
+        
+        data.skill_matches.forEach(match => {
+            const category = match.category || 'technical';
+            categoryScores[category] = (categoryScores[category] || 0) + match.score;
+        });
+        
+        modalBody.innerHTML = `
+            <div class="analysis-report">
+                <!-- Header -->
+                <div class="report-header mb-4">
+                    <h3 class="mb-2">${data.job_title || 'Job Analysis'}</h3>
+                    <p class="text-muted mb-3">${data.job_company || 'Unknown Company'} • ${new Date(data.created_at).toLocaleDateString()}</p>
+                    
+                    <!-- Overall Score -->
+                    <div class="overall-score-card text-center p-3 mb-4" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px;">
+                        <h2 class="mb-1">${data.overall_fit_percentage}%</h2>
+                        <p class="mb-0">Overall Match</p>
+                        <span class="badge bg-light text-dark">${data.overall_recommendation}</span>
+                    </div>
+                </div>
+
+                <!-- Category Breakdown -->
+                <div class="category-breakdown mb-4">
+                    <h5 class="mb-3">Category Breakdown</h5>
+                    <div class="row">
+                        <div class="col-md-3 mb-3">
+                            <div class="category-card text-center p-3 border rounded">
+                                <h6 class="text-primary">Technical Skills</h6>
+                                <h4 class="mb-0">${categoryScores.technical}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="category-card text-center p-3 border rounded">
+                                <h6 class="text-success">Soft Skills</h6>
+                                <h4 class="mb-0">${categoryScores.soft}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="category-card text-center p-3 border rounded">
+                                <h6 class="text-warning">Experience</h6>
+                                <h4 class="mb-0">${categoryScores.experience}</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3 mb-3">
+                            <div class="category-card text-center p-3 border rounded">
+                                <h6 class="text-info">Education</h6>
+                                <h4 class="mb-0">${categoryScores.education}</h4>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Skill Matches Table -->
+                <div class="skill-matches mb-4">
+                    <h5 class="mb-3">Skill Analysis</h5>
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Skill/Requirement</th>
+                                    <th>Resume Evidence</th>
+                                    <th>Score</th>
+                                    <th>Category</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.skill_matches.map(match => `
+                                    <tr>
+                                        <td><strong>${match.skill}</strong><br><small class="text-muted">${match.requirement}</small></td>
+                                        <td>${match.resume_evidence}</td>
+                                        <td>
+                                            <span class="badge ${match.score === 2 ? 'bg-success' : match.score === 1 ? 'bg-warning' : 'bg-danger'}">
+                                                ${match.score}/2
+                                            </span>
+                                        </td>
+                                        <td><span class="badge bg-secondary">${match.category}</span></td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Summary -->
+                <div class="summary-section">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-success">Relevant Strengths</h6>
+                            <ul class="list-unstyled">
+                                ${data.summary.relevant_strengths.map(strength => `<li><i class="fas fa-check text-success me-2"></i>${strength}</li>`).join('')}
+                            </ul>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <h6 class="text-warning">Areas of Improvement</h6>
+                            <ul class="list-unstyled">
+                                ${data.summary.areas_of_improvement.map(area => `<li><i class="fas fa-exclamation-triangle text-warning me-2"></i>${area}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="learning-path mt-3">
+                        <h6 class="text-info">Suggested Learning Path</h6>
+                        <ul class="list-unstyled">
+                            ${data.summary.suggested_learning_path.map(suggestion => `<li><i class="fas fa-lightbulb text-info me-2"></i>${suggestion}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
+
+    // Delete Confirmation Function
+    function confirmDeleteAnalysis(analysisId, analysisTitle) {
+        console.log("Confirming deletion for analysis:", analysisId);
+        
+        // Set the analysis title in the modal
+        document.getElementById('deleteAnalysisTitle').textContent = analysisTitle;
+        
+        // Show the confirmation modal
+        const confirmModal = new bootstrap.Modal(document.getElementById('deleteConfirmModal'));
+        confirmModal.show();
+        
+        // Set up the confirm button handler with double-click protection
+        document.getElementById('confirmDeleteBtn').onclick = function() {
+            const confirmBtn = this;
+            if (confirmBtn.disabled) {
+                console.log("Delete confirmation already in progress");
+                return;
+            }
+            
+            confirmBtn.disabled = true;
+            confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+            
+            confirmModal.hide();
+            deleteAnalysis(analysisId);
+        };
+    }
+
+    // PDF Download Function
+    function downloadAnalysisPDF(analysisId) {
+        console.log("Downloading PDF for analysis:", analysisId);
+        
+        // Show loading state
+        const downloadBtn = event.target.closest('button');
+        const originalIcon = downloadBtn.innerHTML;
+        downloadBtn.innerHTML = '<i class="fas fa-spinner fa-spin text-success" style="font-size: 16px;"></i>';
+        downloadBtn.disabled = true;
+        
+        // Fetch analysis details and generate PDF
+        fetch(`/analysis-details/${analysisId}/`)
+            .then(response => response.json())
+            .then(data => {
+                console.log("Analysis data received for PDF:", data);
+                generateAnalysisPDF(data);
+            })
+            .catch(error => {
+                console.error('Error fetching analysis for PDF:', error);
+                alert('Error generating PDF. Please try again.');
+            })
+            .finally(() => {
+                // Restore button state
+                downloadBtn.innerHTML = originalIcon;
+                downloadBtn.disabled = false;
+            });
+    }
+
+    function generateAnalysisPDF(data) {
+        // Create a new window for PDF generation
+        const printWindow = window.open('', '_blank');
+        
+        // Generate HTML content for PDF
+        const pdfContent = `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>Analysis Report - ${data.job_title || 'Job Analysis'}</title>
+                <style>
+                    body { font-family: Arial, sans-serif; margin: 20px; }
+                    .header { text-align: center; margin-bottom: 30px; }
+                    .score-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 8px; text-align: center; margin-bottom: 30px; }
+                    .category-breakdown { display: flex; justify-content: space-around; margin-bottom: 30px; }
+                    .category-card { text-align: center; padding: 15px; border: 1px solid #ddd; border-radius: 8px; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                    th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                    th { background-color: #f2f2f2; }
+                    .strengths, .improvements, .learning { margin-bottom: 20px; }
+                    .strengths h6 { color: #28a745; }
+                    .improvements h6 { color: #ffc107; }
+                    .learning h6 { color: #17a2b8; }
+                    @media print { body { margin: 0; } }
+                </style>
+            </head>
+            <body>
+                <div class="header">
+                    <h1>Resume Analysis Report</h1>
+                    <h2>${data.job_title || 'Job Analysis'}</h2>
+                    <p>${data.job_company || 'Unknown Company'} • ${new Date(data.created_at).toLocaleDateString()}</p>
+                </div>
+                
+                <div class="score-card">
+                    <h2>${data.overall_fit_percentage}%</h2>
+                    <p>Overall Match</p>
+                    <span style="background: white; color: #333; padding: 5px 10px; border-radius: 4px;">${data.overall_recommendation}</span>
+                </div>
+                
+                <div class="category-breakdown">
+                    <div class="category-card">
+                        <h6>Technical Skills</h6>
+                        <h4>${data.skill_matches.filter(m => m.category === 'technical').reduce((sum, m) => sum + m.score, 0)}</h4>
+                    </div>
+                    <div class="category-card">
+                        <h6>Soft Skills</h6>
+                        <h4>${data.skill_matches.filter(m => m.category === 'soft').reduce((sum, m) => sum + m.score, 0)}</h4>
+                    </div>
+                    <div class="category-card">
+                        <h6>Experience</h6>
+                        <h4>${data.skill_matches.filter(m => m.category === 'experience').reduce((sum, m) => sum + m.score, 0)}</h4>
+                    </div>
+                    <div class="category-card">
+                        <h6>Education</h6>
+                        <h4>${data.skill_matches.filter(m => m.category === 'education').reduce((sum, m) => sum + m.score, 0)}</h4>
+                    </div>
+                </div>
+                
+                <h3>Skill Analysis</h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Skill/Requirement</th>
+                            <th>Resume Evidence</th>
+                            <th>Score</th>
+                            <th>Category</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${data.skill_matches.map(match => `
+                            <tr>
+                                <td><strong>${match.skill}</strong><br><small>${match.requirement}</small></td>
+                                <td>${match.resume_evidence}</td>
+                                <td>${match.score}/2</td>
+                                <td>${match.category}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+                
+                <div class="strengths">
+                    <h6>Relevant Strengths</h6>
+                    <ul>
+                        ${data.summary.relevant_strengths.map(strength => `<li>${strength}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div class="improvements">
+                    <h6>Areas of Improvement</h6>
+                    <ul>
+                        ${data.summary.areas_of_improvement.map(area => `<li>${area}</li>`).join('')}
+                    </ul>
+                </div>
+                
+                <div class="learning">
+                    <h6>Suggested Learning Path</h6>
+                    <ul>
+                        ${data.summary.suggested_learning_path.map(suggestion => `<li>${suggestion}</li>`).join('')}
+                    </ul>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        printWindow.document.write(pdfContent);
+        printWindow.document.close();
+        
+        // Wait for content to load, then print
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 500);
+    }
+</script>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteConfirmModalLabel">
+                    <i class="fas fa-exclamation-triangle text-warning"></i> Confirm Deletion
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong id="deleteAnalysisTitle"></strong>?</p>
+                <p class="text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete Analysis
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analysis Modal -->
+<div class="modal fade" id="analysisModal" tabindex="-1" aria-labelledby="analysisModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="analysisModalLabel">
+                    <i class="fas fa-chart-line"></i> Analysis Report
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="analysisModalBody">
+                <!-- Content will be loaded here -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Job Loading Overlay Styles -->
+<style>
+    .job-loading-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(255, 255, 255, 0.9);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+
+    .loading-content {
+        text-align: center;
+        background-color: var(--white);
+        padding: 32px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+
+    .loading-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: var(--gray-800);
+        margin-bottom: 16px;
+    }
+
+    .loading-steps {
+        margin-top: 24px;
+    }
+
+    .loading-step {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+        font-size: 14px;
+        color: var(--gray-600);
+    }
+
+    .loading-step.active {
+        color: var(--primary-color);
+        font-weight: 500;
+    }
+
+    .loading-step.completed {
+        color: var(--success-color);
+    }
+
+    .step-number {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background-color: var(--gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+
+    .loading-step.active .step-number {
+        background-color: var(--primary-color);
+        color: var(--white);
+    }
+
+    .loading-step.completed .step-number {
+        background-color: var(--success-color);
+        color: var(--white);
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--gray-200);
+        border-top: 4px solid var(--primary-color);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 16px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    .action-icons .btn-link {
+        transition: all 0.2s ease;
+        border-radius: 4px;
+    }
+    
+    .action-icons .btn-link:hover {
+        background-color: rgba(0,0,0,0.1);
+        transform: scale(1.1);
+    }
+    
+    .action-icons .btn-link:focus {
+        box-shadow: none;
+    }
+</style>
+
+{% endblock %}

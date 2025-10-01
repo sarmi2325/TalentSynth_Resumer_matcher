@@ -1,0 +1,26 @@
+# Core Django Framework
+Django==5.2.6
+
+# Authentication & Social Login
+django-allauth==0.62.2
+
+# AI & Document Processing
+llama-parse==0.4.4
+llama-index==0.10.25
+llama-index-llms-gemini==0.1.7
+llama-index-core==0.10.25
+
+# Google AI Integration
+google-generativeai==0.3.2
+
+# Date/Time Utilities
+python-dateutil==2.8.2
+
+# Environment Variables
+python-dotenv
+
+# Production server
+gunicorn
+
+
+
