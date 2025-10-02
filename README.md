@@ -1,6 +1,11 @@
 # Resume Matcher - AI-Powered Resume Analysis
 
 **STOP MAKING EXCUSES. START MATCHING RESUMES.**
+---
+## Demo
+
+Try out the live demo of the project here:  
+[TalentSynth Resume Matcher](https://talentsynthresumermatcher-production.up.railway.app/)
 
 This is a Django application that uses cutting-edge AI to parse resumes, extract structured data, and match them against job descriptions with unmatched precision.
 
