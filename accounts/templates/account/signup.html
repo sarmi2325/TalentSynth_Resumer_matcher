@@ -37,18 +37,50 @@
 <body>
     <div class="container">
         <h2>Sign Up</h2>
+        
+        {% if messages %}
+            {% for message in messages %}
+            <div class="{% if message.tags == 'success' %}success-msg{% else %}error-msg{% endif %}" 
+    style="padding: 10px; margin-bottom: 15px; border-radius: 5px;">
+
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
         <form method="POST" action="{% url 'account_signup' %}">
             {% csrf_token %}
-            {{ form.non_field_errors }}
-            {{ form.email.errors }}
-            <input type="text" name="email" placeholder="Email" required>
-            {{ form.password1.errors }}
+            
+            {% if form.non_field_errors %}
+                <div style="color: red; margin-bottom: 15px;">
+                    {{ form.non_field_errors }}
+                </div>
+            {% endif %}
+            
+            {% if form.email.errors %}
+                <div style="color: red; margin-bottom: 5px;">
+                    {{ form.email.errors }}
+                </div>
+            {% endif %}
+            <input type="email" name="email" placeholder="Email" required value="{{ form.email.value|default:'' }}">
+            
+            {% if form.password1.errors %}
+                <div style="color: red; margin-bottom: 5px;">
+                    {{ form.password1.errors }}
+                </div>
+            {% endif %}
             <input type="password" name="password1" placeholder="Password" required>
-            {{ form.password2.errors }}
+            
+            {% if form.password2.errors %}
+                <div style="color: red; margin-bottom: 5px;">
+                    {{ form.password2.errors }}
+                </div>
+            {% endif %}
             <input type="password" name="password2" placeholder="Confirm Password" required>
+            
             <button type="submit">Sign Up</button>
         </form>
         <p>Already have an account? <a href="{% url 'account_login' %}">Login</a></p>
     </div>
 </body>
 </html>
+
