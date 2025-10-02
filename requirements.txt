@@ -6,10 +6,10 @@ django-extensions==3.2.3
 django-allauth==0.63.6
 
 # AI & Document Processing - COMPATIBLE VERSIONS
-llama-parse==0.4.4
-llama-index==0.10.29
-llama-index-llms-gemini==0.1.7
-llama-index-core==0.10.29
+llama-parse==0.6.54
+llama-index==0.14.3
+llama-index-llms-gemini==0.6.1
+llama-index-core== 0.14.3
 
 # Google AI Integration - COMPATIBLE VERSION
 google-generativeai==0.8.5
