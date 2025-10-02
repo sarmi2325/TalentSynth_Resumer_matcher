@@ -2,7 +2,7 @@
 Django==5.2.6
 
 # Authentication & Social Login
-django-allauth==0.62.2
+django-allauth==0.62.1
 
 # AI & Document Processing
 llama-parse==0.4.4
