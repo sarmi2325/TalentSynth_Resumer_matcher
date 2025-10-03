@@ -142,7 +142,7 @@ Output STRICT valid JSON only.
         
         # Set 60 second timeout for maximum safety
         signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(60)
+        signal.alarm(160)
         
         try:
             response = llm.complete(prompt)
@@ -150,7 +150,7 @@ Output STRICT valid JSON only.
             ai_logger.debug(f" Gemini response received: {response.text[:200]}...")
         except TimeoutError:
             signal.alarm(0)  # Cancel the alarm
-            ai_logger.error("❌ GEMINI API TIMEOUT - Request took longer than 60 seconds")
+            ai_logger.error("❌ GEMINI API TIMEOUT - Request took longer than 160 seconds")
             raise TimeoutError("Gemini API call timed out after 60 seconds")
         
         text = response.text.strip()
@@ -362,7 +362,7 @@ Return ONLY valid JSON, no other text.
         
         # Set 60 second timeout for maximum safety
         signal.signal(signal.SIGALRM, timeout_handler)
-        signal.alarm(60)
+        signal.alarm(160)
         
         try:
             response = llm.complete(prompt)
@@ -372,7 +372,7 @@ Return ONLY valid JSON, no other text.
         except TimeoutError:
             signal.alarm(0)  # Cancel the alarm
             ai_logger.error("❌ RESUME COMPARISON TIMEOUT - Request took longer than 60 seconds")
-            raise TimeoutError("Resume comparison API call timed out after 60 seconds")
+            raise TimeoutError("Resume comparison API call timed out after 160 seconds")
         
         text = response.text.strip()
         # Clean up response
