@@ -37,7 +37,7 @@ jsonschema==4.24.0
 # Security
 cryptography==46.0.2
 
-
+whitenoise
 
 
 
