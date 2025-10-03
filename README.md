@@ -31,46 +31,67 @@ This is a Django application that uses cutting-edge AI to parse resumes, extract
 - Production: Gunicorn, deployed on Railway
 
 ---
-## Similarity Scoring Stratergy
-ANALYSIS REPORT CATEGORY BREAKDOWN:
+# Similarity Scoring Strategy
 
-1. SKILL MATCHES CATEGORIES:
-Each skill is categorized into 4 main types:
+This document outlines the methodology for evaluating resume-job description similarity based on categorized skills and experiences.
 
-TECHNICAL SKILLS:
-Examples: Python, JavaScript, React, SQL, Machine Learning, AWS
-What it measures: Programming languages, frameworks, tools, technologies
-Evidence: Projects, certifications, work experience using these skills
-
-SOFT SKILLS:
-Examples: Leadership, Communication, Teamwork, Problem-solving, Time Management
-What it measures: Interpersonal skills, behavioral competencies
-Evidence: Leadership roles, team projects, volunteer work, achievements
-
-EXPERIENCE:
-Examples: Years of experience, Industry experience, Project management, Team leadership
-What it measures: Professional experience relevant to the job
-Evidence: Work history, project duration, team size, responsibilities
-
-EDUCATION:
-Examples: Degree level, Relevant coursework, Academic projects, GPA
-What it measures: Educational background and academic achievements
-Evidence: Degrees, certifications, academic projects, relevant coursework
-
-3. SCORING SYSTEM:
-Each skill gets a score from 0-2:
-0 = Not Mentioned - Skill not found in resume
-1 = Mentioned but weak evidence - Listed but no projects/impact shown
-2 = Strong evidence - Projects, experience, measurable outcomes
-
-5. DETAILED ANALYSIS BREAKDOWN:
-The report provides 4 category scores:
-6. OVERALL RECOMMENDATION LEVELS:
-Strong Match - 80%+ fit
-Good Match - 60-79% fit
-Moderate Match - 40-59% fit
-Weak Match - Below 40% fit
 ---
+
+## Skill Match Categories
+
+Each skill in a resume is categorized into one of four main types:
+
+### Technical Skills
+- **Examples:** Python, JavaScript, React, SQL, Machine Learning, AWS  
+- **What it measures:** Programming languages, frameworks, tools, technologies  
+- **Evidence:** Projects, certifications, work experience using these skills  
+
+### Soft Skills
+- **Examples:** Leadership, Communication, Teamwork, Problem-solving, Time Management  
+- **What it measures:** Interpersonal skills and behavioral competencies  
+- **Evidence:** Leadership roles, team projects, volunteer work, achievements  
+
+### Experience
+- **Examples:** Years of experience, Industry experience, Project management, Team leadership  
+- **What it measures:** Professional experience relevant to the job  
+- **Evidence:** Work history, project duration, team size, responsibilities  
+
+### Education
+- **Examples:** Degree level, Relevant coursework, Academic projects, GPA  
+- **What it measures:** Educational background and academic achievements  
+- **Evidence:** Degrees, certifications, academic projects, relevant coursework  
+
+---
+
+## Scoring System
+
+Each skill receives a score between **0-2**:
+
+- **0 = Not Mentioned** → Skill not found in resume  
+- **1 = Mentioned but Weak Evidence** → Listed but no projects/impact shown  
+- **2 = Strong Evidence** → Projects, experience, measurable outcomes  
+
+---
+
+## Analysis Breakdown
+
+The report generates **4 category scores**:
+- Technical Skills Score  
+- Soft Skills Score  
+- Experience Score  
+- Education Score  
+
+---
+
+## Overall Recommendation Levels
+
+The overall fit percentage is translated into four recommendation levels:
+
+- **Strong Match** → 80% and above  
+- **Good Match** → 60–79%  
+- **Moderate Match** → 40–59%  
+- **Weak Match** → Below 40%  
+
 ## Installation Guide
 
 1. Clone the repo:
