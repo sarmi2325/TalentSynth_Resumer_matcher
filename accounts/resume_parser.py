@@ -26,7 +26,7 @@ Settings.llm = Gemini(api_key=GEMINI_API_KEY, model_name="models/gemini-2.5-flas
 
 def parse_resume_with_llama(resume_file):
     """Return the full text extracted from resume using LlamaParse."""
-    ai_logger.info(f"🤖 LLAMAPARSE STARTED - File: {resume_file}")
+    ai_logger.info(f" LLAMAPARSE STARTED - File: {resume_file}")
     
     try:
         if not LLAMA_API_KEY:
@@ -37,13 +37,13 @@ def parse_resume_with_llama(resume_file):
             ai_logger.error(f"❌ File not found: {resume_file}")
             raise FileNotFoundError(f"Resume file not found: {resume_file}")
         
-        ai_logger.info(f"📁 Processing file: {resume_file} (Size: {os.path.getsize(resume_file)} bytes)")
+        ai_logger.info(f" Processing file: {resume_file} (Size: {os.path.getsize(resume_file)} bytes)")
         
         documents = parser.load_data(resume_file)
         text_content = "\n".join([doc.text for doc in documents])
         
         ai_logger.info(f"✅ LLAMAPARSE COMPLETED - Extracted {len(text_content)} characters")
-        ai_logger.debug(f"📄 Text preview: {text_content[:200]}...")
+        ai_logger.debug(f" Text preview: {text_content[:200]}...")
         
         return text_content
         
@@ -53,7 +53,7 @@ def parse_resume_with_llama(resume_file):
 
 def extract_resume_fields(resume_text):
     """Send text to Gemini and get structured JSON."""
-    ai_logger.info(f"🧠 GEMINI EXTRACTION STARTED - Text length: {len(resume_text)}")
+    ai_logger.info(f" GEMINI EXTRACTION STARTED - Text length: {len(resume_text)}")
     
     try:
         if not GEMINI_API_KEY:
@@ -64,7 +64,7 @@ def extract_resume_fields(resume_text):
             ai_logger.error("❌ Resume text too short or empty!")
             raise ValueError("Resume text is too short or empty")
         
-        ai_logger.debug(f"📄 Resume text preview: {resume_text[:300]}...")
+        ai_logger.debug(f" Resume text preview: {resume_text[:300]}...")
         prompt = f"""
 You are an expert resume parser. Extract EXACT values only in JSON:
 
@@ -130,7 +130,7 @@ Dates:
 - Use "CURRENT" if ongoing.
 Output STRICT valid JSON only.
 """
-        ai_logger.debug(f"📤 Calling Gemini API with prompt length: {len(prompt)}")
+        ai_logger.debug(f" Calling Gemini API with prompt length: {len(prompt)}")
         llm = Gemini(api_key=GEMINI_API_KEY, model_name="models/gemini-2.5-flash")
         
         # BULLETPROOF TIMEOUT HANDLING for Railway
@@ -147,7 +147,7 @@ Output STRICT valid JSON only.
         try:
             response = llm.complete(prompt)
             signal.alarm(0)  # Cancel the alarm
-            ai_logger.debug(f"📥 Gemini response received: {response.text[:200]}...")
+            ai_logger.debug(f" Gemini response received: {response.text[:200]}...")
         except TimeoutError:
             signal.alarm(0)  # Cancel the alarm
             ai_logger.error("❌ GEMINI API TIMEOUT - Request took longer than 60 seconds")
@@ -164,11 +164,11 @@ Output STRICT valid JSON only.
             ai_logger.error("❌ No JSON object found in Gemini response")
             raise ValueError("No JSON object found in response")
         text = text[first:last+1]
-        ai_logger.debug(f"📄 Extracted JSON text: {text[:200]}...")
+        ai_logger.debug(f" Extracted JSON text: {text[:200]}...")
         
         result = json.loads(text)
         ai_logger.info(f"✅ GEMINI EXTRACTION COMPLETED - Keys: {list(result.keys())}")
-        ai_logger.debug(f"📊 Extracted data summary: First name: {result.get('first_name', 'N/A')}, Skills: {len(result.get('skills', []))}")
+        ai_logger.debug(f" Extracted data summary: First name: {result.get('first_name', 'N/A')}, Skills: {len(result.get('skills', []))}")
         return result
         
     except Exception as e:
@@ -350,7 +350,7 @@ Scoring Rubric:
 
 Return ONLY valid JSON, no other text.
 """
-        ai_logger.info(f"🔄 RESUME COMPARISON STARTED - Resume keys: {list(resume_json.keys())}, Job desc length: {len(job_desc_text)}")
+        ai_logger.info(f" RESUME COMPARISON STARTED - Resume keys: {list(resume_json.keys())}, Job desc length: {len(job_desc_text)}")
         print(f"DEBUG: Starting resume comparison analysis")
         llm = Gemini(api_key=GEMINI_API_KEY, model_name="models/gemini-2.5-flash")
         
