@@ -81,17 +81,17 @@ def profile(request):
             logger.debug(f"File saved to: {file_path}")
 
             try:
-            # 1️⃣ Parse resume text with LlamaParse
+            # Parse resume text with LlamaParse
                 logger.debug("Starting LlamaParse extraction...")
                 resume_text = parse_resume_with_llama(file_path)
                 logger.debug(f"LlamaParse completed. Text length: {len(resume_text)}")
 
-            # 2️⃣ Extract fields with Gemini
+            # Extract fields with Gemini
                 logger.debug("Starting Gemini extraction...")
                 parsed_json = extract_resume_fields(resume_text)
                 logger.debug(f"Gemini extraction completed. JSON keys: {list(parsed_json.keys())}")
 
-            # 3️⃣ Calculate experience
+            # Calculate experience
                 logger.debug("Calculating experience...")
                 logger.debug(f"Experience data before calculation: {parsed_json.get('experience', [])}")
                 exp_totals = calculate_experience(parsed_json)
@@ -99,7 +99,7 @@ def profile(request):
                 logger.debug(f"Experience calculated: {exp_totals}")
                 logger.debug(f"Final parsed_json keys: {list(parsed_json.keys())}")
 
-                # 4️⃣ Save JSON in session and database
+                # Save JSON in session and database
                 logger.debug("Saving parsed data to session...")
                 request.session['parsed_resume'] = parsed_json
                 logger.debug("Session saved successfully")
