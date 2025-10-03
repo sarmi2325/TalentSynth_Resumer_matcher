@@ -1,5 +1,6 @@
 import json
 import os
+import logging
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from llama_parse import LlamaParse
@@ -8,6 +9,10 @@ from llama_index.llms.gemini import Gemini
 from llama_index.core import Settings
 from dotenv import load_dotenv
 load_dotenv()
+
+# BULLETPROOF LOGGING for AI operations
+ai_logger = logging.getLogger('ai_operations')
+ai_logger.setLevel(logging.INFO)
 
 LLAMA_API_KEY=os.getenv("LLAMA_API_KEY")
 GEMINI_API_KEY=os.getenv("GEMINI_API_KEY")
@@ -21,12 +26,45 @@ Settings.llm = Gemini(api_key=GEMINI_API_KEY, model_name="models/gemini-2.5-flas
 
 def parse_resume_with_llama(resume_file):
     """Return the full text extracted from resume using LlamaParse."""
-    documents = parser.load_data(resume_file)
-    return "\n".join([doc.text for doc in documents])
+    ai_logger.info(f"🤖 LLAMAPARSE STARTED - File: {resume_file}")
+    
+    try:
+        if not LLAMA_API_KEY:
+            ai_logger.error("❌ LLAMA_API_KEY not found!")
+            raise ValueError("LlamaParse API key not configured")
+        
+        if not os.path.exists(resume_file):
+            ai_logger.error(f"❌ File not found: {resume_file}")
+            raise FileNotFoundError(f"Resume file not found: {resume_file}")
+        
+        ai_logger.info(f"📁 Processing file: {resume_file} (Size: {os.path.getsize(resume_file)} bytes)")
+        
+        documents = parser.load_data(resume_file)
+        text_content = "\n".join([doc.text for doc in documents])
+        
+        ai_logger.info(f"✅ LLAMAPARSE COMPLETED - Extracted {len(text_content)} characters")
+        ai_logger.debug(f"📄 Text preview: {text_content[:200]}...")
+        
+        return text_content
+        
+    except Exception as e:
+        ai_logger.error(f"❌ LLAMAPARSE FAILED - File: {resume_file}, Error: {str(e)}")
+        raise
 
 def extract_resume_fields(resume_text):
     """Send text to Gemini and get structured JSON."""
+    ai_logger.info(f"🧠 GEMINI EXTRACTION STARTED - Text length: {len(resume_text)}")
+    
     try:
+        if not GEMINI_API_KEY:
+            ai_logger.error("❌ GEMINI_API_KEY not found!")
+            raise ValueError("Gemini API key not configured")
+        
+        if not resume_text or len(resume_text.strip()) < 10:
+            ai_logger.error("❌ Resume text too short or empty!")
+            raise ValueError("Resume text is too short or empty")
+        
+        ai_logger.debug(f"📄 Resume text preview: {resume_text[:300]}...")
         prompt = f"""
 You are an expert resume parser. Extract EXACT values only in JSON:
 
@@ -92,10 +130,28 @@ Dates:
 - Use "CURRENT" if ongoing.
 Output STRICT valid JSON only.
 """
-        print(f"DEBUG: Calling Gemini API with prompt length: {len(prompt)}")
+        ai_logger.debug(f"📤 Calling Gemini API with prompt length: {len(prompt)}")
         llm = Gemini(api_key=GEMINI_API_KEY, model_name="models/gemini-2.5-flash")
-        response = llm.complete(prompt)
-        print(f"DEBUG: Gemini response received: {response.text[:200]}...")
+        
+        # BULLETPROOF TIMEOUT HANDLING for Railway
+        import signal
+        import time
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Gemini API call timed out")
+        
+        # Set 60 second timeout for maximum safety
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(60)
+        
+        try:
+            response = llm.complete(prompt)
+            signal.alarm(0)  # Cancel the alarm
+            ai_logger.debug(f"📥 Gemini response received: {response.text[:200]}...")
+        except TimeoutError:
+            signal.alarm(0)  # Cancel the alarm
+            ai_logger.error("❌ GEMINI API TIMEOUT - Request took longer than 60 seconds")
+            raise TimeoutError("Gemini API call timed out after 60 seconds")
         
         text = response.text.strip()
         # clean triple backticks if present
@@ -105,19 +161,21 @@ Output STRICT valid JSON only.
                 text = text[4:].strip()
         first, last = text.find("{"), text.rfind("}")
         if first == -1 or last == -1:
+            ai_logger.error("❌ No JSON object found in Gemini response")
             raise ValueError("No JSON object found in response")
         text = text[first:last+1]
-        print(f"DEBUG: Extracted JSON text: {text[:200]}...")
+        ai_logger.debug(f"📄 Extracted JSON text: {text[:200]}...")
         
         result = json.loads(text)
-        print(f"DEBUG: Successfully parsed JSON with keys: {list(result.keys())}")
+        ai_logger.info(f"✅ GEMINI EXTRACTION COMPLETED - Keys: {list(result.keys())}")
+        ai_logger.debug(f"📊 Extracted data summary: First name: {result.get('first_name', 'N/A')}, Skills: {len(result.get('skills', []))}")
         return result
         
     except Exception as e:
-        print(f"ERROR in extract_resume_fields: {str(e)}")
-        print(f"ERROR type: {type(e).__name__}")
+        ai_logger.error(f"❌ GEMINI EXTRACTION FAILED - Error: {str(e)}")
+        ai_logger.error(f"❌ Error type: {type(e).__name__}")
         import traceback
-        print(f"ERROR traceback: {traceback.format_exc()}")
+        ai_logger.error(f"❌ Traceback: {traceback.format_exc()}")
         raise e
 
 def parse_date(date_str, today=None, is_start=False):
@@ -292,10 +350,29 @@ Scoring Rubric:
 
 Return ONLY valid JSON, no other text.
 """
+        ai_logger.info(f"🔄 RESUME COMPARISON STARTED - Resume keys: {list(resume_json.keys())}, Job desc length: {len(job_desc_text)}")
         print(f"DEBUG: Starting resume comparison analysis")
         llm = Gemini(api_key=GEMINI_API_KEY, model_name="models/gemini-2.5-flash")
-        response = llm.complete(prompt)
-        print(f"DEBUG: Comparison response received: {response.text[:200]}...")
+        
+        # BULLETPROOF TIMEOUT HANDLING for Railway
+        import signal
+        
+        def timeout_handler(signum, frame):
+            raise TimeoutError("Resume comparison API call timed out")
+        
+        # Set 60 second timeout for maximum safety
+        signal.signal(signal.SIGALRM, timeout_handler)
+        signal.alarm(60)
+        
+        try:
+            response = llm.complete(prompt)
+            signal.alarm(0)  # Cancel the alarm
+            ai_logger.info(f"✅ RESUME COMPARISON COMPLETED - Response length: {len(response.text)}")
+            print(f"DEBUG: Comparison response received: {response.text[:200]}...")
+        except TimeoutError:
+            signal.alarm(0)  # Cancel the alarm
+            ai_logger.error("❌ RESUME COMPARISON TIMEOUT - Request took longer than 60 seconds")
+            raise TimeoutError("Resume comparison API call timed out after 60 seconds")
         
         text = response.text.strip()
         # Clean up response
@@ -337,3 +414,4 @@ Return ONLY valid JSON, no other text.
                 "overall_recommendation": "Analysis Error"
             }
         }
+
