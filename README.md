@@ -31,7 +31,46 @@ This is a Django application that uses cutting-edge AI to parse resumes, extract
 - Production: Gunicorn, deployed on Railway
 
 ---
+## Similarity Scoring Stratergy
+ANALYSIS REPORT CATEGORY BREAKDOWN:
 
+1. SKILL MATCHES CATEGORIES:
+Each skill is categorized into 4 main types:
+
+TECHNICAL SKILLS:
+Examples: Python, JavaScript, React, SQL, Machine Learning, AWS
+What it measures: Programming languages, frameworks, tools, technologies
+Evidence: Projects, certifications, work experience using these skills
+
+SOFT SKILLS:
+Examples: Leadership, Communication, Teamwork, Problem-solving, Time Management
+What it measures: Interpersonal skills, behavioral competencies
+Evidence: Leadership roles, team projects, volunteer work, achievements
+
+EXPERIENCE:
+Examples: Years of experience, Industry experience, Project management, Team leadership
+What it measures: Professional experience relevant to the job
+Evidence: Work history, project duration, team size, responsibilities
+
+EDUCATION:
+Examples: Degree level, Relevant coursework, Academic projects, GPA
+What it measures: Educational background and academic achievements
+Evidence: Degrees, certifications, academic projects, relevant coursework
+
+3. SCORING SYSTEM:
+Each skill gets a score from 0-2:
+0 = Not Mentioned - Skill not found in resume
+1 = Mentioned but weak evidence - Listed but no projects/impact shown
+2 = Strong evidence - Projects, experience, measurable outcomes
+
+5. DETAILED ANALYSIS BREAKDOWN:
+The report provides 4 category scores:
+6. OVERALL RECOMMENDATION LEVELS:
+Strong Match - 80%+ fit
+Good Match - 60-79% fit
+Moderate Match - 40-59% fit
+Weak Match - Below 40% fit
+---
 ## Installation Guide
 
 1. Clone the repo:
