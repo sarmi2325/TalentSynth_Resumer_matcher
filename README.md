@@ -1,6 +1,6 @@
 # Resume Matcher - AI-Powered Resume Analysis
 
-**STOP MAKING EXCUSES. START MATCHING RESUMES.**
+
 ---
 ## Demo
 
