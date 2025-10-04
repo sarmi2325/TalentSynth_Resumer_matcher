@@ -1,11 +1,13 @@
 from allauth.socialaccount.adapter import DefaultSocialAccountAdapter
 from allauth.account.adapter import DefaultAccountAdapter
+from .models import UserProfile
 import uuid
 
 class MySocialAccountAdapter(DefaultSocialAccountAdapter):
     def is_auto_signup_allowed(self, request, sociallogin):
-        # Always allow auto-signup
+        # Always allow auto-signup for Google OAuth
         return True
+    
     def populate_user(self, request, sociallogin, data):
         """
         Populates user information from social provider info.
@@ -30,6 +32,18 @@ class MySocialAccountAdapter(DefaultSocialAccountAdapter):
             user.username = username
         
         return user
+    
+    def save_user(self, request, sociallogin, form=None):
+        """
+        Save user and automatically create UserProfile
+        """
+        user = super().save_user(request, sociallogin, form)
+        
+        # Create UserProfile for Google OAuth users
+        if not hasattr(user, 'profile'):
+            UserProfile.objects.create(user=user)
+        
+        return user
 
 class MyAccountAdapter(DefaultAccountAdapter):
     def save_user(self, request, user, form, commit=True):
@@ -52,4 +66,3 @@ class MyAccountAdapter(DefaultAccountAdapter):
             user.username = username
         
         return super().save_user(request, user, form, commit)
-
