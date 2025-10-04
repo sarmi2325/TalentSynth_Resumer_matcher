@@ -589,6 +589,5 @@ def dashboard(request):
         'comparison_result': comparison_result,
         'parsed_resume': parsed_resume,
         'user_profile': user_profile,
-        'analysis_history': analysis_history,
-        'match_score': match_score if 'match_score' in locals() else None
+        'analysis_history': analysis_history
     })
